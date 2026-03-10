@@ -1,0 +1,3216 @@
+
+http://hd-epic.github.io
+```
+### Abstract
+
+```
+We present a validation dataset of newly-collected kitchen-
+based egocentric videos, manually annotated with highly
+detailed and interconnected ground-truth labels covering:
+recipe steps, fine-grained actions, ingredients with nutri-
+tional values, moving objects, and audio annotations. Im-
+portantly, all annotations are grounded in 3D through dig-
+ital twinning of the scene, fixtures, object locations, and
+primed with gaze. Footage is collected from unscripted
+recordings in diverse home environments, making HD-
+EPIC the first dataset collected in-the-wild but with detailed
+annotations matching those in controlled lab environments.
+```
+```
+We show the potential of our highly-detailed annotations
+through a challenging VQA benchmark of 26K questions as-
+sessing the capability to recognise recipes, ingredients, nu-
+trition, fine-grained actions, 3D perception, object motion,
+and gaze direction. The powerful long-context Gemini Pro
+only achieves 37.6% on this benchmark, showcasing its dif-
+ficulty and highlighting shortcomings in current VLMs. We
+additionally assess action recognition, sound recognition,
+and long-term video-object segmentation on HD-EPIC.
+HD-EPIC is 41 hours of video in 9 kitchens with digital
+twins of 413 kitchen fixtures, capturing 69 recipes, 59K fine-
+grained actions, 51K audio events, 20K object movements
+and 37K object masks lifted to 3D. On average, we have
+263 annotations per minute of our unscripted videos.
+```
+```
+Figure 1. Annotation Highlights. We capture multi-day recordings of unscripted activities. Centre-Top: Recipes are recorded
+with steps and their preparation temporally annotated, along with ingredient addition. Ingredients are weighed and nutrition recorded.
+Centre-Middle: Dense fine-grained narrations detailing what, how, and why are parsed and clustered. Audio events are also annotated.
+Centre-Bottom: Object movements are temporally annotated with bounding boxes and hands and object masks.Right-Top: All annota-
+tions are temporally grounded in a 3D digital twin. We show trajectories of 3 (masked) objects: Sweet potato, Food processor and Spoon,
+highlighting relevant kitchen fixtures.Right-Bottom: Gaze captures when objects are primed (i.e. looked at) before being taken/placed.
+```
+# arXiv:2502.04144v2 [cs.CV] 25 Mar 2025
+
+
+### 1. Introduction
+
+Detailed understanding of videos, from the brief fine-
+grained action to the overarching hour-long activity, is ef-
+fortless for humans but currently out of reach for both foun-
+dational and specialised models. Egocentric videos, in par-
+ticular, introduce additional challenges to general video un-
+derstanding, including significant camera motion, subtle ac-
+tion motion, objects occluded during manipulations and fre-
+quently going out of view. Understanding such videos re-
+quires disentangling the combined signals of head motion,
+hand interactions and a global understanding of the dynamic
+scene. This makes ego videos a great testbed for a compre-
+hensive evaluation of video perception models.
+Egocentric vision has recently been fuelled by an influx
+of datasets [18, 28, 29, 80]. While large-scale, making them
+ideal for training, these datasets are sparsely annotated, par-
+ticularly for tasks which link various parts of the long video,
+or those requiring 3D grounding. In contrast, richly anno-
+tated datasets tend to be synthetic or collected in controlled
+settings [7, 50, 68] which limits their realism. We bridge
+this gap by presenting themost densely annotated dataset
+of unscripted recordings, ideal for comprehensivevalida-
+tionof video-only and video-language models.
+We collect new videos, allowing us to capture addi-
+tional meta-data and to ensure these videos have not al-
+ready been used to train existing models. Following EPIC-
+Kitchens [17], participants collect all kitchen activities for
+three days. We thus term our dataset Highly-Detailed EPIC
+(HD-EPIC). Fig. 1 provides an overview of the multi-tiered
+annotations, several of which are novel:
+⋆Recipe steps are temporally annotated, and linked to an-
+notations of all preparatory actions that relate to the step.
+⋆Ingredients are weighed in videos and labelled with nu-
+trition. We track dish nutrition as ingredients are added.
+⋆Each action has a dense description capturing the what,
+how, and why of actions along the start and end time.
+⋆For each kitchen, we curate a digital twin with la-
+belled fixtures. These are associated with actions (e.g.
+open/close) and the taking/placing of objects.
+⋆All moved objects are tracked, with manual masks lifted
+to 3D bounding boxes.
+⋆We associate gaze with object movements, labelling
+when objects are spotted before take/place actions.
+With these dense annotations, we design a challeng-
+ing Visual Question Answering (VQA) benchmark of 26K
+questions. We purposefully do not use LLMs to generate
+negatives, instead using similar annotations. We highlight a
+few novel question types:
+⋆Recipe nutrition: we question the change in the recipe
+nutrition as one or more ingredients are added.
+⋆Multi-video: we question recipes prepared across
+recordings, with a VQA that spans multiple long videos.
+⋆Object itinerary: we question multi-hop object move-
+
+```
+ments over a long video, relative to kitchen fixtures.
+⋆Fixture interactions: we question how many times a par-
+ticular cupboard/drawer is opened/closed.
+⋆Action how/why: we question how/why an action was
+carried out, using participant-narrated manners/reasons.
+⋆Anticipation with gaze: With gaze priming, we query
+next-object movement, offering evidenced anticipation.
+Additionally, we report results on action recognition, sound
+recognition, and long-term video object segmentation.
+This paper thus contributes: (i) 41 hours of multi-day
+unscripted egocentric recordings, (ii) highly-detailed anno-
+tations including novel labels (e.g. ingredient nutrition, dig-
+ital twin, gaze prime) and (iii) a challenging VQA bench-
+mark including novel Qs (e.g. object itinerary, recipe nutri-
+tion changes) along with 3 standard video benchmarks.
+```
+### 2. Related Work
+
+```
+With the rise of foundation models [5, 6, 11, 13, 21, 59, 70,
+79, 81, 88], there has been a recent influx of benchmarks
+[8, 10, 15, 23, 25, 35, 42–44, 49, 58, 78, 92] aiming to test
+video understanding abilities. These benchmarks evaluate
+diverse capabilitiese.g. physics [58], counting [23], tempo-
+ral reasoning [8, 10] and long video [23, 25, 49].
+A few benchmarks test embodied or egocentric under-
+standing. [28] released a Natural Language Queries (NLQ)
+benchmark (19.2K queries) centred around episodic mem-
+ory of objects. [48] collects 1.6K human-made questions
+and answers on topics such as relative object locations,
+episodic memory, and spatial reasoning. However, it uses
+views from the HM3D [63] and ScanNet [16] datasets, so
+these questions are based on passive views of a static envi-
+ronment. [49, 86] auto-generate 5K and 7K questions based
+on Ego4D narrations. Whilst this approach is efficient, it is
+limited to these short narrations. [8] collects its own anno-
+tations for videos from several datasets, including Ego4D.
+Their benchmark is solely focused on temporal questions
+related to ordering, counting, causality and direction.
+To evaluate a wider range of capabilities, a wider range
+of annotations are required. Of particular note are 3D
+grounding annotations. Ego4D [28] contains some environ-
+ment scans and static 3D object locations. With SLAM-
+equipped devices [91] builds a benchmark for 3D object
+tracking; [50] contains an office and living room digital
+twin; and [29] contains ego- and exo- views of expert tasks.
+In contrast to these works which focus on only a few an-
+notation types, we collect the most comprehensive set of
+annotations in one dataset, including highly detailed narra-
+tions, object and hand segmentations, and a comprehensive
+3D digital twin of the scene and objects, all from unscripted
+egocentric footage in participants’ homes.
+```
+### 3. Data Collection
+
+```
+Recruitment and Equipment. Each participant engaged
+in a long commitment (∼50 hours) involving data record-
+```
+
+```
+Recorded over 3 days Objects Activities Recipes
+```
+```
+Figure 2. Diversity in HD-EPIC, which is filmed over 3 days in-the-wild, resulting in many objects, activities and recipes.
+```
+```
+Figure 3. Recipe modification in ingredients and steps.
+```
+ing and providing detailed narrations, recipes and nutri-
+tion information. Data was collected with Project Aria
+glasses [72]—a multi-sensor platform with 3 forward cam-
+eras (1 RGB and 2 SLAM), 7 microphones and inward cam-
+eras for gaze estimation. We collected 30 FPS RGB videos
+at 1408 × 1408 resolution, 60 FPS eye tracking and 30 FPS
+SLAM. We supplied participants with multiple devices in-
+cluding scales for nutritional tracking (see Fig. A1).
+Instructions and Collected Data. Participants recorded
+all their daily kitchen activities for at least 3 consecutive
+days. All 9 participants were asked to wear the glasses
+each time they walked into their kitchen, pressing record
+upon entering, and stopping the recording when they left
+the kitchen. Participants recorded for 3.5 to 7.2 hours (avg.
+4.6). Overall, we collected 156 videos, with an average
+length of 15.9 (±14.5) minutes totalling 41.3 hours (4.46M
+frames). Fig. 2 shows the diversity in the collected data.
+Following data collection, participants provided the
+recipes they freely prepared, citing the source (e.g. website)
+and any modifications (see Fig. 3). We collected a total of
+69 recipes covering various cuisines. On average, recipes
+contained 6.6 steps, 8.1 ingredients, and took 4 hours 48
+minutes across 2.1 videos from preparation to serving. Our
+longest recipe took 2 days and 6 hours to complete.
+
+To track nutrition of recipes, participants weighed and
+manually logged ingredients with MyFitnessPal [3], giving
+us detailed nutrition information and adding an additional
+
+```
+dimension to the dataset. In total, participants used 558 in-
+gredients including ingredients high in protein,e.g. tuna and
+kidney beans; carbohydrates,e.g. dates and flour; and fat
+e.g. sour cream and pine nuts. Participants prepared both
+high calorie dishese.g. Lazy Cake (4.8K calories) and low
+calorie dishese.g. Crispy Cucumber Salad (274 calories).
+Narrations. We follow prior datasets [17, 18, 28], ask-
+ing participants to watch their recordings and narrate with
+a web-based narrator tool [28]. We expand on this by ask-
+ing participants to describewhatthey are doing, along with
+howandwhy. This results in a rich set of narrations that are
+denser, and more detailed than previous datasets (e.g. 3.8×
+more words/min than Ego4D). See stats in Supp. B.
+Post-Processing—Multi-Video Slam and Gaze. We use
+Aria MPS [1] to process videos obtaining singular multi-
+day point clouds per kitchen; 1kHz 6DoF camera trajecto-
+ries; and eye gaze direction. We post-process VRS files,
+converting videos to mp4, removing the gaze camera input
+for anonymity. Further details are in Supp. B.
+```
+### 4. Annotation Pipeline
+
+```
+We collect extensive multi-tiered annotations to achieve the
+level of detail that distinguishes HD-EPIC from other video
+understanding datasets. Here we detail our pipeline.
+```
+#### 4.1. Annotating Recipe Steps and Ingredients
+
+```
+Our videos are distinct from short recipe videos found on-
+line, which are typically trimmed to only crucial steps, and
+often edited further or sped up. Videos in HD-EPIC include
+a wider range of recipe-relevant activities, such as fetching
+or prepping ingredients. To comprehensively annotate these
+videos, we introduce prep and step pairs.
+Theprepof a correspondingstepis defined as all essen-
+tial actions the participant takes to get ready to execute a
+given step. For example, the prep of the step ‘chop tomato’,
+includes retrieving the tomato from storage, washing it, and
+gathering the knife and chopping board. However, if the
+step is ‘Add chopped onions and stir’, then the chopping of
+onions is part of the prep for that step. This introduces a
+more fine-grained understanding of all steps, unexplored in
+prior datasets [29, 39, 73]. Fig. 4 shows sample prep-step
+```
+
+Figure 4. For the ‘Carbonara’ recipe, we visualise theprepandsteptime segments for three consecutive steps (left), along with sample
+frames with corresponding action narrations (top). The interleaving of differentpreps/steps is evident in the annotations.
+
+```
+openturn-onunrollunscrewuncoverswitchunwrapunlocktakeremoveliftscoopgatherchooseholdpresspullturnshakesqueezeslidereachflipwritescrewcookformwaterwearsetstretchflattenbendkneadbalanceprovefinishmarkprepareproducematchsolidifymixpouraddfillattachcoatcutpeelemptybreakdivideripfiltercrushgratestabmove
+transition
+```
+```
+carryapplysprinklesprayseasonsortfoldcheckadjustsearchlookmeasureincreasewait
+turn
+```
+- downlowerscanunfreezepateatfeeldrinksmellcloseturn-offwraprolllockwashdryscrubrubscrapebrushsoakputdropthrowinserthanglet-goserve
+
+```
+1 0^0
+```
+```
+1 0^1
+```
+```
+1 0^2
+```
+```
+1 0^3
+```
+```
+1 0^4
+```
+```
+Verb Frequency
+```
+```
+(Log Scale
+```
+```
+)
+```
+```
+taphobscaleoven
+dishwasherfridgephonealarmbuttonkettle
+knobtvblender
+coffee maker
+```
+```
+heatplug
+washing machine
+```
+```
+wiremicrowavefreezer
+remote control
+toasterextractor fancameralightheaterwatch
+food processor
+hooverpowercdbatteryslow cookercomputer
+hot choc
+```
+. maker
+    candy floss maker
+
+```
+pantraypothandle
+chopping board
+```
+```
+spatulacolanderpentongsscissorsslicerutensilladlepotato peelerfiltergraterjuicerrolling pinholderwhiskpestlepizza cutterclipchopstickbottle openerpresserstrawmasherthermometerkeywhetstonetapefunnelsalad spinnerspoonknifeforkcutlerybowlplatecupglassjugonionpotatomushroomtomatogarliccarrotpeppersquashvegetablelettuceleafcucumberauberginelady fingerbroccolistalkcelerykalecourgettecornbeanspinachpeaspring onionlemonraspberryseedmangoorangenutavocadobananacherrylimegrapeoliveblueberryapplefruitraisinpineappleplumkiwipearcoconutchickenmeatbaconsalmonburgerbeeftofufishsalamiquorntunasausagecheeseeggbuttermilkyoghurtomelettecreamdoughricepieflourbreadrolllentilpastabreadcrumbbiscuitpancakeoatmealcakecerealyeastbreadsticknoodleoilsaltsaucegingercorianderchillispicesugarstockpowderbasilpasteparsleyoreganovinegarcinnamoncuminpaprikarosemaryturmericthymewatercoffeeteajuicedrinkcocktailwinesodabeerfoodmixturecurrysaladpizzasoupchocolatespreadssandwichdumplingcrisponion ring
+vanilla extractpackage
+```
+```
+lidbagbottleboxjar
+containercancapcoverbasketcorkteapotsalt cellarbackpackcupboarddrying racktopsinkdrawershelfwallkitchenstandfloorchairwindowladderairerhookcandlekitchen doorclothestowelpapernapkinwrapplastic wrapfoilglovelabelsheetsmatrubberhand guardapronpillowkitchen towelhandspongeclothwashing liquidbrushtablet
+washing powder
+dust panbinrubbishskinegg shellpithrestrecipeliquidairbookfacebariceballoon
+```
+```
+1 0^0
+```
+```
+1 0^1
+```
+```
+1 0^2
+```
+```
+1 0^3
+```
+```
+1 0^4
+```
+```
+Noun Frequency
+```
+```
+(Log Scale
+```
+```
+)
+```
+```
+Order Monitor Sense Block Clean Leave
+TransitionDistribute
+```
+```
+Merge Split
+Retrieve Manipulate
+Access
+```
+```
+RubbishOther
+Hand
+ContainersStorage FurnitureMaterials
+Prepared Food
+```
+```
+Drinks
+```
+```
+Baked Goods and GrainsSpices, Herbs and Sauces
+```
+```
+Dairy and Eggs
+Meat and Substitute
+```
+```
+Fruits and Nuts
+```
+```
+Crockery Vegetables
+UtensilsCutlery
+AppliancesCookware
+Cleaning Materials
+```
+```
+Figure 5. Frequency of verb clusters (top) and noun clusters (bottom) in narrated sentences by category, shown on a logarithmic scale.
+```
+Figure 6. Nutrition is monitored throughout recipes as ingredients
+are incorporated into dishes. Here we show Banana Bread Choco-
+late Chip Cookies. We annotate when ingredients are weighed,
+document their nutrition, and locate their adding time, giving us
+overall dish nutrition at each stage.
+
+annotations for 3 steps. Nearly all steps (93.1%) have paired
+prep annotations. Typically, prep is shorter than a step: avg.
+prep is 54.5s (±95.3s), avg. step is 78.2s (±100.7s).
+
+We also annotateweighingandaddingtemporal seg-
+ments which enables monitoring the nutrition of the full
+dish as ingredients are incorporated (see Fig. 6). In total,
+we annotate 283 in-view weighing sequences (avg. 18.9s)
+
+```
+and 501 adding sequences (avg. 31.6s), excluding spices.
+Details of the annotation process are in Supp. C.
+```
+#### 4.2. Fine-Grained Actions
+
+```
+Transcription.We automatically transcribe and manually
+check and correct all audio narrations provided by partici-
+pants, to obtain detailed action descriptions.
+Action Boundaries. For all narrations, we label precise
+start and end times. In total, we obtain segments for 59,
+actions, with a mean duration of 2.0s (±3.4s).
+Parsing. We parseverbs , nouns andhands from open
+vocabulary narrations so they can be used for closed vo-
+cabulary tasks, such as action recognition. We also ex-
+tracthow andwhy clauses from 16,004 and 11,540 narra-
+tions, respectively. For example, “Turn thesalt container
+clockwise by pushing it with myleft hand so that the lid
+is aligned with the container opening. ”
+Clustering. Fig. 5 shows the distribution of clusters (i.e.
+classes) across all videos in HD-EPIC, along with hierar-
+chical clusters [18]. As with prior datasets [18, 28], our
+highly diverse actions and objects are long-tailed.
+Sound Annotations. We follow [31] to collect audio anno-
+tations. These capture start-end times of audio events along
+with a class name (e.g. ‘click’, ‘rustle’, ‘metal-plastic col-
+lision’, ‘running water’). Overall, we have 50,968 audio
+annotations from 44 classes.
+Full details of transcription, boundary labelling, parsing,
+clustering and sound annotations are in Supp. C.
+```
+
+```
+Figure 7. Digital Twin: from point cloud (left), to surfaces (mid-
+dle) and labelled fixtures (right). We show two moved objects
+(masks on top) at fixtures: cheese and pan. Body poses from [87].
+```
+#### 4.3. Digital Twins: Scene & Object Movements
+
+Scene. We create digital copies of participants’ kitchens
+by reconstructing the surfaces and manually curating every
+fixture (e.g. cupboard, drawer), storage space (e.g. shelves,
+hooks) and large appliance (e.g. fridge, microwave). This is
+distinct from digital twins that rely on known environments
+with replicas. Our digital twin is created in Blender [2] on
+top of the multi-video SLAM point clouds from recordings.
+Each kitchen contains an average of 45.9 labelled fix-
+tures (min 31, max 62), including 14.2 counters/surfaces,
+12.2 cupboards, 7.8 drawers and 5.2 appliances (sample in
+Fig. 7). We refer to these annotations as FixturesF.
+We then associate narrations which describe scene inter-
+actions withF. We find actions where a noun indicates a
+fixture,e.g. “open drawer”, identify the exact “drawer” in
+the digital twin (e.g. drawer.001) and update its state. Fol-
+lowing studies showing humans fixate up to 1 second before
+interacting [40], we take the fixturef∈Fwith the highest
+cumulative gaze intersection for the 1s before the narration.
+Hand Masks. We annotate a handful of frames per video
+for both hands. Frames are selected to cover various ac-
+tions and kitchen locations. We use these to automatically
+segment, and manually correct a selected subset. In to-
+tal, our dataset contains 7.7M hand masks: 3.9M right and
+3.8M left of which 11K are manually annotated (details in
+Supp. C).
+Moving Objects in 2D.To generate 3D object movement
+annotations, we first annotate when objects move. Annota-
+tors label a temporal segment each time an object is moved
+until it is set, along with 2D object bounding boxes at the
+onset and end of motion. For example, if a person moves a
+cup from a countertop to the sink, one bounding box cap-
+tures the cup on the countertop and another when in the
+sink. Tracks are annotated even for slight shifts/pushes, and
+
+```
+Figure 8. Priming Object Interaction Through Gaze. Top:
+Camera position with projected eye-gaze and object positions in
+3D. Middle: 2D gaze location. Bottom: Timeline for priming ob-
+ject movemente.g. the glass is primed 8.3s before taking.
+```
+```
+thus offer full annotations of all object movements.
+Overall, we collected 19.9K object movement tracks and
+36.9K bounding boxes. We label an average of 9.2 objects
+taken and 9.0 objects placed per minute. On average, tracks
+are 9.0s long, the longest is 461.5s.
+Object Masks.Despite progress in segmentation [36, 64]
+and available annotations [19, 29], models perform poorly
+in egocentric video, particularly under occlusions. We ob-
+tain pixel-level segmentations from each bounding box by
+initialising with iterative SAM2 [64] then manually correct-
+ing. Annotators corrected 74% of masks; the IoU between
+SAM2 and the manual masks is 0.82.
+Masks to 3D.We lift object masks to 3D using dense depth
+estimates and 2D-to-3D sparse correspondences provided
+by MPS. Given metric depth from [85], we identifyS, the
+set of pixels within or around the object with 3D correspon-
+dences. We then find the linear transformation coefficients:
+α,β=argmin
+α,β
+```
+```
+∥(αDˆS+β)−DS∥^2 .whereDˆSare esti-
+mated depth values andDSare existing depth values, fol-
+lowed by RANSAC to remove outliers.
+3D Object Motion. Objects move 61.4cm (±84.5cm) on
+average, 27.6% move≤10cm, while 7.6% move≥2m.
+Object-Scene Interactions.With the 3D object locations,
+we associate locations with the closest fixturef∈F, subject
+to fixture-specific heuristics (e.g. objects must be within a
+counter’s x-y plane). We manually verify all assignments,
+correcting any errors. On average objects move between 1.
+different fixtures per video (see Supp. C for stats).
+Priming Object Movement.The behaviour of gaze when
+picking up and placing objects is well-studied [32, 40]. We
+combine eye-gaze and 3D object locations, to find when an
+object isprimed,i.e. the moment in time when the gaze
+attends to the object’s location before picking it up (pick-up
+priming) or when the gaze attends to the future location of
+an object before it’s put down (put-down priming).
+We calculate thepriming timefor all objects, excluding
+those taking or placed off screen. Additionally, at times, a
+person is already manipulating an object well before pick-
+ing it up. We thus exclude objects with a pick up location
+```
+
+Dataset Val&Test Action Unscripted Free Recipe Nutrition Gaze Audio Object Hand 3D object Labelled 3D Camera Fully
+Hours Segments Setting Labels over time environment pose annotated
+HOI4D [46] 11.4 ✓✗✗✗✗✗✗ Mask Mask ✓✓✗✓
+Assembly101 [68] 66.8 ✓✗✗✗✗✗✗✗ 3D pose ✗✗✗✓
+EPIC-KITCHENS-100 [18] 25.3 ✓✓✓✗✗✗✓ Mask Mask ✓✗✓✗
+Ego4D [28] 288.7 ✓✓✓✗✗✗✗ B-Box B-Box ✗✗✗✗
+HoloAssist [80] 49.8 ✓✗✗✗✗✓✗✗ 3D pose ✗✗✓✓
+Aria Digital Twin [50] 8.1 ✗✗✗✗✗✓✗ Mask ✗✓✓✓✓
+Aria Everyday Activities [47] 7.3 ✗✗✓✗✗✓✗✗✗✗✗✓✗
+Aria Everyday Objects [74] 0.4 ✗✓✓✗✗✗✗ B-Box ✗✓✗✓✓
+Ego-Exo4D [29] 85.1 ✗✓✓✓✗✓✗ Mask 3D pose ✗✗✓✗
+HD-EPIC 41.3 ✓✓✓✓✓✓✓ Mask Mask ✓✓✓✓
+Table 1.Comparison of Egocentric Video Datasets(see full table A1 in Supp.).
+
+```
+Location (% Total)Filtered (% Total)Feasible (% Feasible)Primed (% Feasible)Not Primed Avg. Time (s)
+Start 29.40 70.60 94.82 5.18 3. 99 (± 2. 94 )
+End 66.92 33.08 88.46 11.54 2. 62 (± 2. 05 )
+```
+Figure 9. (Top) Priming Statistics for both start and end locations
+(Bottom) Histogram showing the difference in time when an object
+is primed before it is picked up (blue) or placed (red).
+
+already close to the gaze 10s earlier. In Fig. 8 we show gaze
+priming for two objects: milk bottle and glass. The glass’s
+end location, a cupboard, is primed 3s before the glass is
+put away. Fig. 9 displays priming statistics. Of those ob-
+jects feasible for priming, 94.8% are primed, an average of
+4.0s before being picked up, compared to 88.5% primed an
+average of 2.6s before being placed.
+Long Term Object Tracking. We connect object move-
+ments and form longer trajectories,i.e. object itineraries, to
+capture sequences of an object’s movement. Our efficient
+pipeline utilises our lifted 3D locations and allows annotat-
+ing a 1-hour long video in minutes (details in Supp. C).
+
+#### 4.4. HD-EPIC vs Prior Egocentric Datasets
+
+Tab. 1 compares HD-EPIC to other egocentric datasets (full
+table in Supp.). Compared to the largest dataset with la-
+belled 3D environments (Aria Digital Twin [50]), HD-EPIC
+contains 5x more footage; has more annotations; and impor-
+tantly was collected in an unscripted manner in the partic-
+ipants’ homes. In particular, HD-EPIC is the first to an-
+notate recipes, nutritional values, detailed action segments,
+gaze and audio labels on the same set of videos. With these
+diverse and dense annotations, HD-EPIC constitutes a true
+zero-shot benchmark for video understanding.
+
+### 5. Benchmarks and Results
+
+We show the potential of HD-EPIC as a validation dataset
+with benchmarks on general Video Question Answering
+(VQA) (Sec 5.1), action and sound recognition (Sec 5.2)
+and long-term video object segmentation (Sec 5.3).
+
+```
+Ingredient Recipe[550]
+[400]
+Nutrition[200]
+Fine-GrainedAction
+[21000]3DPerception
+[1500]
+```
+```
+ObjectMotion
+[900]
+```
+```
+Gaze[2000]
+```
+```
+Recipe Recognition[50]
+```
+```
+Multi-RecipeRecognition [50]
+```
+```
+Multi-StepLocalization [50]
+```
+```
+Step Localization[50]
+```
+```
+Step Recognition[100]Prep Localization[100]
+Following ActivtityRecognition [50]Rough StepLocalization [100]
+```
+```
+Ingredient Retrieval
+```
+```
+[100]
+```
+```
+Ingredient Weight
+```
+```
+[50]
+```
+```
+Ingredients Order
+[50]
+Localization [100]Ingredient Adding
+Recognition [50]Ingredient
+Recognition [50]Exact Ingredient
+Estimation [100]Image Nutrition
+Nutrition Change[50]
+Video NutritionEstimation [50]
+Action Recognition[10000]
+How Recognition
+```
+```
+[500]
+```
+```
+Why Recognition
+```
+```
+[500]
+```
+```
+Action Localization
+```
+```
+[10000]
+Fixture Location
+```
+```
+[500]
+Object Location
+```
+```
+[500]
+```
+```
+Retrieval [200]Object ContentsCounting [300]Fixture Interaction
+```
+```
+Itinerary [500]Object Movement
+```
+```
+Counting [200]Object Movement
+```
+```
+Localization [200]Stationary Obejct
+```
+```
+Gaze Estimation[1000]
+```
+```
+Anticipation [1000]Interaction <^1 s
+```
+```
+<<< 110 ms
+```
+```
+< 110 hm
+```
+```
+<< 11 s^0 s < 10 h
+<< 11 m^0 m
+```
+```
+<<< 11 s 0 h< 1 h
+<<^1101 m 0 s
+m<
+```
+<< (^1) <m (^1) < 01 s<s 10 h 1 h
+10 m
+<^1 < (^1) <m (^1) < 01 ss< 10 h< 1 h
+0 <m
+<^10 m<^1 m< 10 s< 1 s< 10 h^1 h
+<^1 h
+<^10 <^1 m<^10 s< 1 s< 10 h
+<m
+1 h
+<^10 m<^1 m<^10 s<^1 s<^10 h
+< (^1) h
+< 1 <^10 h
+< (^10) m< (^1) m< (^10) ss
+< (^1) h
+< 1 <^10 h
+< (^10) ss
+< (^1) m
+<<^10 m
+< 1 <^10 s<^1 <s^10 h^1 h
+< (^1) h< (^10) h< (^10) mm
+<< 1 <m^10 <s^1 s
+< (^1) h< 1010 m
+< 10 <s^1 hs
+<< 1 < (^01) mm
+< (^10) h< 11 h
+<<^11 m^0 ss
+< (^10) h<<^101 mh
+< 10 s <^1 s
+<< 110 mm
+<< 110 hh
+< 10 s<^1 s
+< (^1) <m 10 m
+<< (^11) <h 0 h 1 s
+< (^1) < 01 sm
+< 10 m
+<^1 h<^1 <^0 h 1 s
+<^10 s<^1 < 1 m (^0) <m 1 h
+<^10 <h 1 s
+<^10 s<^1 <m^10 m<^1 <h (^10) <h 1 s
+<^10 s<
+1 m< 10 m< 1 h
+<^10 h<^1 s< 10 s< 1 m
+<^10 m
+<^1 h< 10 h< 1 s< 10 s< 1 m
+<^10 m
+<^1 h
+<^10 h<^1 s<^10 s<^1 m< 10 m< (^1) h
+< (^10) h< (^1) s< (^10) s< (^1) m< (^10)
+m<^1 h
+< (^10) h< (^1) s< (^10) s<^1 m< (^10) m< (^1) h
+< (^10) h< (^1) s<^10 s<^1 m<^10 m<^1 h
+< 1 < (^0) h^1 s<^10 s
+< (^1) m< (^10) m< (^1) h
+< 1 < 01 <hs^10 s
+< (^1) m< (^10) m< (^1) h
+< 1 < (^0) h^1 s<^10 s
+<< 11 <m^10 hm
+<<< 1011 hs^0 s
+< 10 m< 1 m
+<< 11 h^0 h
+Figure 10.VQA Question Prototypes. We show our 30 question
+prototypes by category alongside the number of questions. Outer
+bars indicate the distribution over input lengths for each question.
+
+#### 5.1. HD-EPIC VQA Benchmark and Analysis
+
+```
+Benchmark Creation. We take the dense output of our
+annotation pipeline and construct a comprehensive VQA
+benchmark around 7 types of annotations:
+```
+1. Recipe. Questions on temporally localising, retrieving,
+    or recognising recipes and their steps.
+2. Ingredient. Questions on the ingredients used, their
+    weight, their adding time and order.
+3. Nutrition. Questions on nutrition of ingredients and nu-
+    tritional changes as ingredients are added to recipes.
+4. Fine-grained action. What, how, and why of actions
+    and their temporal localisation.
+5. 3D perception. Questions that require the understand-
+    ing of relative positions of objects in the 3D scene.
+6. Object motion. Questions on where, when and how
+    many times objects are moved across long videos.
+7. Gaze. Questions on estimating the fixation on large
+    landmarks and anticipating future object interactions.
+For each question type, we define prototypes to sample
+questions, correct answers, and strong negatives from our
+annotations. For example, Object Movement Counting
+asks “How many times did the object <bbox>seen at
+<time>move in the video?”. This uses long videos, re-
+quiring multiple hops to be correctly answered. In contrast,
+
+
+```
+Figure 11.VQA Results per Question Prototype. Our benchmark contains many challenging questions for current models.
+```
+Model RecipeIngredient Nutrition Action 3D Motion Gaze Avg.
+Blind - Language Only
+Llama 3.2 33.5 25.0 36.7 23.3 22.3 25.5 19.5 26.
+Gemini Pro 38.0 26.8 30.0 22.1 21.5 27.7 20.5 26.
+Video-Language
+VideoLlama 2 30.8 25.7 32.7 27.2 25.7 28.5 21.2 27.
+LongVA 29.6 30.8 33.7 30.7 32.9 22.7 24.5 29.
+LLaVA-Video 36.3 33.5 38.7 43.0 27.3 18.9 29.3 32.
+Gemini Pro 60.5 46.2 34.7 39.6 32.5 20.8 28.7 37.
+Sample Human Baseline 96.7 96.7 85.0 92.5 93.8 92.7 75.0 90.
+Table 2.VQA Results per Category(% Acc.). Our VQA bench-
+mark cannot be solved blind or by external knowledge and is a
+challenge for state-of-the-art video VLM models.
+
+How Recognition asks “What is the best description for
+how the person carried out the action<verb, noun>?” to
+test a model’s ability to capture intricate details of actions.
+Each question prototype is 5-way multiple choice. We
+generate hard negatives for prototypes by sampling within
+the dataset for difficult answers. For example, we take 4 dif-
+ferent answers of how participants performed the same ac-
+tion. This ensures realistic negatives and challenging ques-
+tions. In total, we have 30 prototypes, and generate 26,
+multiple-choice questions. This makes it one of the largest
+VQA video benchmarks, but keeps it tractable particularly
+to evaluate closed-source VLMs. Due to the density of our
+annotations, we estimate an upper bound of 100,000 possi-
+ble unique questions with this set of prototypes.
+Fig. 10 shows the distribution of questions per category
+alongside the distribution of input lengths which varies from
+single frames to 7+ hours. Details of each prototype’s sam-
+pling can be found in Supp. D. A sample of our questions
+and answers can be seen in Fig. 13.
+VLM Models. Due to the size and long-term nature of
+many question prototypes in our benchmark, we use 5 rep-
+resentative models as baselines (more details in Supp. D):
+
+- Llama 3.2 90B [21]. We use this as a strong open-source
+    (OS) text-only baseline, as LLMs can perform well on
+    visual QA benchmarkswithout any visual input[82].
+- VideoLlama 2 7B [13]. OS short context model.
+- LongVA [89]. Longest context OS model.
+- LLaVa-Video [90]. OS model trained also on ego data.
+- Gemini Pro [75]. Closed source, longest context of any
+    model, and state-of-the-art on long-video [25].
+VQA Results Per Category and Per Prototype.Tab. 2
+provides overall and per-category accuracy averaged over
+the prototype results shown in Fig. 11. Both language-only
+models only achieve 26.5% and 26.7%, only 6.7% above
+random. Open-source video VLMs (VideoLlama, LongVA,
+
+```
+Figure 12.Effect of Input Length. Models struggle with ques-
+tions of all video input lengths. s=second, m=minute, h=hour.
+Model Modality Verb Noun Action EPIC-100 ActionUnseen
+EPIC-KITCHENS-100 SOTA
+TIM [9] A+V 77.1 67.2 57.5 44.
+HD-EPIC
+Chance - 10.9 1.8 0.0 -
+SlowFast [24] V 29.2 10.6 5.3 29.
+Omnivore [26] V 19.5 17.1 8.7 28.
+MotionFormer-HR [51] V 35.7 20.0 10.2 32.
+VideoMAE-L [76] V 47.5 29.4 17.9 29.
+TIM [9] A+V 51.3 36.1 23.4 44.
+TIM [9] V 51.2 36.5 23.9 44.
+Table 3.Action Recognition Benchmark(% Acc.). HD-EPIC
+provides a significant challenge for state-of-the-art models.
+```
+```
+LlaVA-Video) perform similarly (27.4%, 29.3%, 32.4%)
+but have different strengths as shown in Fig. 11. For exam-
+ple, Llama better estimates nutrition, while the video is nec-
+essary to get above random performance on action recogni-
+tion and gaze estimation. Gemini achieves the best perfor-
+mance, particularly forRecipe andIngredient where ex-
+ternal knowledge helps. However, the average performance
+(37.6%) and the gap to our sample human baseline (90.3%)
+shows the challenge posed by our VQA benchmark.
+Video Length. Fig. 12 shows models struggle with all
+video lengths but are worst with inputs≥1 minute.
+Common Failures. Fig. 13 shows qualitative results. In
+Recipe , models struggle when steps have common objects
+or actions. InIngredient , models guess weights (readable
+from the scale by humans) poorly, also causing errors in
+Nutrition .Fine-grained action is hard when answers share
+nouns. InGaze , models just select recently moved objects.
+Confusion in3D andObject motion occurs with directions
+(right/left) and fixtures (counters/drawers).
+```
+#### 5.2. Recognition Benchmarks
+
+```
+Action Recognition.We assess 5 action recognition meth-
+ods [9, 24, 26, 51, 76], using publicly available checkpoints
+fine-tuned on EPIC-KITCHENS-100. Results are shown
+in Tab. 3. For context we show the results from EPIC-
+KITCHENS-100 (top row) and on the unseen kitchens sub-
+set of EPIC-KITCHENS-100 (last col.). Best performance
+```
+
+Figure 13.VQA Qualitative Results. We mark GT answers with agreen background, and predictions from different models,i.e., LLaMA
+3.2, VideoLLaMA 2, LongVA, Gemini Pro with coloured dots. Note: Under Nutrition, [fat] values are not provided to the model.
+Model Modality Top-1 Top-5 mCA mAP mAUC
+EPIC-Sounds SOTA
+TIM [9] A+V 58.3 86.0 25.8 30.6 0.
+HD-EPIC
+Chance - 6.9 29.4 2.2 2.3 0.
+SSAST [27] A 25.1 59.8 10.8 13.5 0.
+TIM [9] A 26.9 56.9 12.4 11.4 0.
+ASF [34] A 27.9 64.0 11.9 14.0 0.
+TIM [9] A+V 31.9 61.0 14.4 15.7 0.
+
+Table 4.Sound Recognition Benchmark. Current models strug-
+gle on HD-EPIC compared to the EPIC-Sounds state-of-the-art.
+
+on HD-EPIC is only 51% for verbs, 37% for nouns and 24%
+for actions leaving plenty of room for improvement.
+Sound Recognition. We evaluate 3 audio models [9, 27,
+34], all trained on EPIC-Sounds. Tab. 4 shows a large gap
+in performance comparing HD-EPIC to EPIC-Sounds for
+SSAST (-28.4), ASF (-25.9) and TIM (-26.4). This shows
+audio is not sufficiently robust to new scenes or devices.
+
+#### 5.3. Long-Term VOS Benchmark
+
+We construct a long-term video object segmentation bench-
+mark using our segmentations and track associations (Sec.
+4.3). Our benchmark has 1000 sequences, each with 1-
+objects and 2 hand masks (see Supp. D for details). While
+we have a lot more tracks, we keep it comparable to cur-
+rent benchmarks in size. We evaluate two models [12, 64]
+with a naive baseline where object masks are kept static.
+Fig. 14 shows the results. SAM2 [64] surpasses Cutie [12]
+for hands, but does worse on objects. Overall, objects have
+added challenge in diversity in perspective, lighting, loca-
+
+```
+Total Hands Objects
+Model J F J&F J F J&F J F J&F
+Static 8.0 10.3 9.2 14.6 14.4 14.5 4.8 8.4 6.
+Cutie [12] 44.8 52.3 48.6 74.8 79.5 77.2 30.1 39.0 34.
+SAM2 [64] 45.2 49.6 47.4 87.5 90.8 89.1 24.5 29.5 27.
+```
+```
+Figure 14.Long-Term VOS. jaccard indexJ& contour accuracy
+Fshow Cutie and SAM2 struggle with segmenting objects.
+```
+```
+tion and occlusion.
+```
+### 6. Onwards...
+
+```
+HD-EPIC is available from: http://dx.doi.org/
+10.5523/bris.3cqb5b81wk2dc2379fx1mrxh
+```
+- i.e. the videos, audio, gaze, blender digital twin, cam-
+era pose estimates. Annotations are available at:http:
+//hd-epic.github.io–i.e. object movements, ob-
+ject masks and 3D locations, long-object tracks, and object-
+action-fixture labels. We hope HD-EPIC will direct future
+research to a more holistic perception of egocentric videos.
+
+
+### Acknowledgements
+
+Research at Bristol is supported by EPSRC Fellowship UM-
+PIRE (EP/T004991/1), EPSRC Program Grant Visual AI
+(EP/T028572/1) and EPSRC Doctoral Training Program.
+O Emara, K Flanagan and F Abdelazim are supported by
+UKRI CD in Interactive AI (EP/S022937/1). The project
+is also supported by a unrestricted charitable donation from
+Meta (Aria Project Partnership) to the University of Bristol.
+Gemini Pro results are supported by a research credits grant
+from Google DeepMind.
+Research at Leiden is supported by the Dutch Research
+Council (NWO) under a Veni grant (VI.Veni.222.160). Re-
+search at Singapore is supported by Singapore Ministry of
+Education (MOE) Academic Research Fund (AcRF) Tier 1
+grant (No. MSS23C018).
+We thank Rajan from Elancer and his team, for their
+huge assistance with temporal and audio annotation. We
+thank Srdjan Delic and his team for their assistance with
+mask annotations. We thank Damian Steer and the Univer-
+sity of Bristol’s RDSF team for hosting and maintaining the
+dataset. We also thank Owen Tyley for the 3D Digital Twin
+of the kitchen environments using Blender.
+We thank David Fouhey and Evangelos Kazakos for
+early feedback on the project. We thank Pierre Moulon,
+Vijay Baiyya and Cheng Peng from the Aria team for tech-
+nical assistance in using the MPS code and services.
+We acknowledge the usage of EPSRC Tier-2 Jade
+clusters. The authors also acknowledge the use of
+Isambard-AI National AI Research Resource (AIRR).
+Isambard-AI is operated by the University of Bristol
+and is funded by the UK Government’s Department
+for Science, Innovation and Technology (DSIT) via
+UK Research and Innovation; and the Science and
+Technology Facilities Council [ST/AIRR/I-A-I/1023].
+
+### References
+
+```
+[1] Project aria machine perception services. https://
+facebookresearch.github.io/projectaria_
+tools/docs/ARK/mps. 3, 2
+[2]Blender.https://www.blender.org/. 5
+[3] My fitness app.https://www.myfitnesspal.com/.
+3, 1
+[4]VGG List Annotator (LISA), 2022.
+https://www.robots.ox.ac.uk/ vgg/software/lisa/. 5
+[5] Josh Achiam, Steven Adler, Sandhini Agarwal, Lama Ah-
+mad, Ilge Akkaya, Florencia Leoni Aleman, Diogo Almeida,
+Janko Altenschmidt, Sam Altman, Shyamal Anadkat, et al.
+GPT-4 technical report. arXiv preprint arXiv:2303.08774,
+```
+2023. 2, 9
+[6] Jean-Baptiste Alayrac, Jeff Donahue, Pauline Luc, Antoine
+Miech, Iain Barr, Yana Hasson, Karel Lenc, Arthur Mensch,
+Katherine Millican, Malcolm Reynolds, et al. Flamingo: a
+
+```
+visual language model for few-shot learning. Advances in
+Neural Information Processing Systems (NeurIPS), 2022. 2
+[7] Prithviraj Banerjee, Sindi Shkodrani, Pierre Moulon,
+Shreyas Hampali, Fan Zhang, Jade Fountain, Edward Miller,
+Selen Basol, Richard Newcombe, Robert Wang, Jakob Ju-
+lian Engel, and Tomas Hodan. HOT3D: Hand and Object
+Tracking in 3D from Egocentric Multi-View Videos. InPro-
+ceedings of the IEEE/CVF Conference on Computer Vision
+and Pattern Recognition (CVPR), 2025. 2
+[8] Mu Cai, Reuben Tan, Jianrui Zhang, Bocheng Zou, Kai
+Zhang, Feng Yao, Fangrui Zhu, Jing Gu, Yiwu Zhong,
+Yuzhang Shang, Yao Dou, Jaden Park, Jianfeng Gao,
+Yong Jae Lee, and Jianwei Yang. TemporalBench: Towards
+fine-grained temporal understanding for multimodal video
+models.arXiv preprint arXiv:2410.10818, 2024. 2
+[9] Jacob Chalk, Jaesung Huh, Evangelos Kazakos, Andrew Zis-
+serman, and Dima Damen. TIM: A Time Interval Machine
+for Audio-Visual Action Recognition. InProceedings of
+the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition (CVPR), 2024. 7, 8, 15
+[10] Jr-Jen Chen, Yu-Chien Liao, Hsi-Che Lin, Yu-Chu Yu, Yen-
+Chun Chen, and Yu-Chiang Frank Wang. ReXTime: A
+benchmark suite for reasoning-across-time in videos. InAd-
+vances in Neural Information Processing Systems (NeurIPS),
+```
+2024. 2
+[11] Zhe Chen, Jiannan Wu, Wenhai Wang, Weijie Su, Guo Chen,
+Sen Xing, Muyan Zhong, Qinglong Zhang, Xizhou Zhu,
+Lewei Lu, et al. InternVL: Scaling up vision foundation
+models and aligning for generic visual-linguistic tasks. In
+Proceedings of the IEEE/CVF Conference on Computer Vi-
+sion and Pattern Recognition (CVPR), 2024. 2
+[12] Ho Kei Cheng, Seoung Wug Oh, Brian Price, Joon-Young
+Lee, and Alexander Schwing. Putting the object back into
+video object segmentation. InProceedings of the IEEE/CVF
+Conference on Computer Vision and Pattern Recognition
+(CVPR), 2024. 8, 15
+[13] Zesen Cheng, Sicong Leng, Hang Zhang, Yifei Xin, Xin
+Li, Guanzheng Chen, Yongxin Zhu, Wenqi Zhang, Ziyang
+Luo, Deli Zhao, et al. VideoLLaMA 2: Advancing Spatial-
+Temporal Modeling and Audio Understanding in Video-
+LLMs.arXiv preprint arXiv:2406.07476, 2024. 2, 7, 14
+[14] Yunfei Chu, Jin Xu, Xiaohuan Zhou, Qian Yang, Shil-
+iang Zhang, Zhijie Yan, Chang Zhou, and Jingren Zhou.
+Qwen-Audio: Advancing universal audio understanding via
+unified large-scale audio-language models. arXiv preprint
+arXiv:2311.07919, 2023. 3
+[15] Daniel Cores, Michael Dorkenwald, Manuel Mucientes,
+Cees GM Snoek, and Yuki M Asano. TVBench: Re-
+designing video-language evaluation. arXiv preprint
+arXiv:2410.07752, 2024. 2
+[16] Angela Dai, Angel X Chang, Manolis Savva, Maciej Hal-
+ber, Thomas Funkhouser, and Matthias Nießner. ScanNet:
+Richly-annotated 3D reconstructions of indoor scenes. In
+Proceedings of the IEEE/CVF Conference on Computer Vi-
+sion and Pattern Recognition (CVPR), 2017. 2
+[17] Dima Damen, Hazel Doughty, Giovanni Maria Farinella,
+Sanja Fidler, Antonino Furnari, Evangelos Kazakos, Davide
+
+
+Moltisanti, Jonathan Munro, Toby Perrett, Will Price, et al.
+Scaling egocentric vision: The EPIC-KITCHENS dataset. In
+Proceedings of the European Conference on Computer Vi-
+sion (ECCV), 2018. 2, 3, 4
+[18] Dima Damen, Hazel Doughty, Giovanni Maria Farinella,
+Antonino Furnari, Jian Ma, Evangelos Kazakos, Davide
+Moltisanti, Jonathan Munro, Toby Perrett, Will Price, and
+Michael Wray. Rescaling egocentric vision: Collection,
+pipeline and challenges for EPIC-KITCHENS-100. Inter-
+national Journal of Computer Vision (IJCV), 2022. 2, 3, 4,
+6, 5
+[19] Ahmad Darkhalil, Dandan Shan, Bin Zhu, Jian Ma, Am-
+lan Kar, Richard Higgins, Sanja Fidler, David Fouhey, and
+Dima Damen. EPIC-KITCHENS VISOR benchmark: Video
+segmentations and object relations. InProceedings of the
+Neural Information Processing Systems (NeurIPS) Track on
+Datasets and Benchmarks, 2022. 5, 7
+[20] Fernando De la Torre, Jessica Hodgins, Adam Bargteil,
+Xavier Martin, Justin Macey, Alex Collado, and Pep Bel-
+tran. Guide to the Carnegie Mellon University Multimodal
+activity (CMU-MMAC) database. 2009. 3
+[21] Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey, Ab-
+hishek Kadian, Ahmad Al-Dahle, Aiesha Letman, Akhil
+Mathur, Alan Schelten, Amy Yang, Angela Fan, et al. The
+Llama 3 Herd of Models.arXiv preprint arXiv:2407.21783,
+
+2024. 2, 7
+[22] Abhishek Dutta and Andrew Zisserman. The VIA annota-
+tion software for images, audio and video. InProceedings
+of the 27th ACM International Conference on Multimedia
+(ACMMM), 2019. 5, 6
+[23] Xinyu Fang, Kangrui Mao, Haodong Duan, Xiangyu Zhao,
+Yining Li, Dahua Lin, and Kai Chen. MMBench-Video:
+A long-form multi-shot benchmark for holistic video under-
+standing. InAdvances in Neural Information Processing Sys-
+tems (NeurIPS), 2024. 2
+[24] Christoph Feichtenhofer, Haoqi Fan, Jitendra Malik, and
+Kaiming He. SlowFast networks for video recognition. In
+Proceedings of the IEEE/CVF International Conference on
+Computer Vision (ICCV), 2019. 7, 15
+[25] Chaoyou Fu, Yuhan Dai, Yondong Luo, Lei Li, Shuhuai Ren,
+Renrui Zhang, Zihan Wang, Chenyu Zhou, Yunhang Shen,
+Mengdan Zhang, et al. Video-MME: The First-Ever Com-
+prehensive Evaluation Benchmark of Multi-modal LLMs in
+Video Analysis. InProceedings of the IEEE/CVF Confer-
+ence on Computer Vision and Pattern Recognition (CVPR),
+2025. 2, 7
+[26] Rohit Girdhar, Mannat Singh, Nikhila Ravi, Laurens van der
+Maaten, Armand Joulin, and Ishan Misra. Omnivore: A Sin-
+gle Model for Many Visual Modalities. InProceedings of
+the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition (CVPR), 2022. 7, 15
+[27] Yuan Gong, Cheng-I Lai, Yu-An Chung, and James Glass.
+SSAST: Self-Supervised Audio Spectrogram Transformer.
+InProceedings of the AAAI Conference on Artificial Intel-
+ligence, 2022. 8
+[28] Kristen Grauman, Andrew Westbury, Eugene Byrne,
+Zachary Chavis, Antonino Furnari, Rohit Girdhar, Jack-
+son Hamburger, Hao Jiang, Miao Liu, Xingyu Liu, Miguel
+
+```
+Martin, Tushar Nagarajan, Ilija Radosavovic, Santhosh Ku-
+mar Ramakrishnan, Fiona Ryan, Jayant Sharma, Michael
+Wray, Mengmeng Xu, Eric Zhongcong Xu, Chen Zhao,
+Siddhant Bansal, Dhruv Batra, Vincent Cartillier, Sean
+Crane, Tien Do, Morrie Doulaty, Akshay Erapalli, Christoph
+Feichtenhofer, Adriano Fragomeni, Qichen Fu, Christian
+Fuegen, Abrham Gebreselasie, Cristina Gonzalez, James
+Hillis, Xuhua Huang, Yifei Huang, Wenqi Jia, Weslie Khoo,
+Jachym Kolar, Satwik Kottur, Anurag Kumar, Federico Lan-
+dini, Chao Li, Yanghao Li, Zhenqiang Li, Karttikeya Man-
+galam, Raghava Modhugu, Jonathan Munro, Tullie Mur-
+rell, Takumi Nishiyasu, Will Price, Paola Ruiz Puentes,
+Merey Ramazanova, Leda Sari, Kiran Somasundaram, Au-
+drey Southerland, Yusuke Sugano, Ruijie Tao, Minh Vo,
+Yuchen Wang, Xindi Wu, Takuma Yagi, Yunyi Zhu, Pablo
+Arbelaez, David Crandall, Dima Damen, Giovanni Maria
+Farinella, Bernard Ghanem, Vamsi Krishna Ithapu, C. V.
+Jawahar, Hanbyul Joo, Kris Kitani, Haizhou Li, Richard
+Newcombe, Aude Oliva, Hyun Soo Park, James M. Rehg,
+Yoichi Sato, Jianbo Shi, Mike Zheng Shou, Antonio Tor-
+ralba, Lorenzo Torresani, Mingfei Yan, and Jitendra Ma-
+lik. Ego4D: Around the World in 3,000 Hours of Egocentric
+Video. InIEEE/CVF Computer Vision and Pattern Recogni-
+tion (CVPR), 2022. 2, 3, 4, 6
+[29] Kristen Grauman, Andrew Westbury, Lorenzo Torresani,
+Kris Kitani, Jitendra Malik, Triantafyllos Afouras, Kumar
+Ashutosh, Vijay Baiyya, Siddhant Bansal, Bikram Boote,
+Eugene Byrne, Zach Chavis, Joya Chen, Feng Cheng, Fu-
+Jen Chu, Sean Crane, Avijit Dasgupta, Jing Dong, Maria
+Escobar, Cristhian Forigua, Abrham Gebreselasie, Sanjay
+Haresh, Jing Huang, Md Mohaiminul Islam, Suyog Jain,
+Rawal Khirodkar, Devansh Kukreja, Kevin J Liang, Jia-
+Wei Liu, Sagnik Majumder, Yongsen Mao, Miguel Martin,
+Effrosyni Mavroudi, Tushar Nagarajan, Francesco Ragusa,
+Santhosh Kumar Ramakrishnan, Luigi Seminara, Arjun So-
+mayazulu, Yale Song, Shan Su, Zihui Xue, Edward Zhang,
+Jinxu Zhang, Angela Castillo, Changan Chen, Xinzhu Fu,
+Ryosuke Furuta, Cristina Gonzalez, Prince Gupta, Jiabo
+Hu, Yifei Huang, Yiming Huang, Weslie Khoo, Anush Ku-
+mar, Robert Kuo, Sach Lakhavani, Miao Liu, Mi Luo,
+Zhengyi Luo, Brighid Meredith, Austin Miller, Oluwatumin-
+inu Oguntola, Xiaqing Pan, Penny Peng, Shraman Praman-
+ick, Merey Ramazanova, Fiona Ryan, Wei Shan, Kiran So-
+masundaram, Chenan Song, Audrey Southerland, Masatoshi
+Tateno, Huiyu Wang, Yuchen Wang, Takuma Yagi, Mingfei
+Yan, Xitong Yang, Zecheng Yu, Shengxin Cindy Zha, Chen
+Zhao, Ziwei Zhao, Zhifan Zhu, Jeff Zhuo, Pablo Arbe-
+laez, Gedas Bertasius, Dima Damen, Jakob Engel, Gio-
+vanni Maria Farinella, Antonino Furnari, Bernard Ghanem,
+Judy Hoffman, C.V. Jawahar, Richard Newcombe, Hyun Soo
+Park, James M. Rehg, Yoichi Sato, Manolis Savva, Jianbo
+Shi, Mike Zheng Shou, and Michael Wray. Ego-Exo4D: Un-
+derstanding Skilled Human Activity from First- and Third-
+Person Perspectives. InProceedings of the IEEE/CVF
+Conference on Computer Vision and Pattern Recognition
+(CVPR), 2024. 2, 3, 5, 6
+[30] Matthew Honnibal and Ines Montani. spaCy 2: Natural lan-
+guage understanding with Bloom embeddings, convolutional
+```
+
+neural networks and incremental parsing. 2020. 5, 10
+[31] Jaesung Huh, Jacob Chalk, Evangelos Kazakos, Dima
+Damen, and Andrew Zisserman. EPIC-SOUNDS: A Large-
+Scale Dataset of Actions that Sound. InIEEE Interna-
+tional Conference on Acoustics, Speech, & Signal Process-
+ing (ICASSP), 2023. 4, 5
+[32] Roland Johansson, Goran Westling, Anders B ̈ ackstr ̈ ̈om, and
+John Flanagan. Eye–Hand Coordination in Object Manipu-
+lation.The Journal of neuroscience: the official journal of
+the Society for Neuroscience, 2001. 5
+[33] Amlan Kar, Seung Wook Kim, Marko Boben, Jun Gao,
+Tianxing Li, Huan Ling, Zian Wang, and Sanja Fidler.
+Toronto annotation suite. https://aidemos.cs.
+toronto.edu/toras, 2021. 7
+[34] Evangelos Kazakos, Arsha Nagrani, Andrew Zisserman,
+and Dima Damen. Slow-Fast Auditory Streams For Audio
+Recognition. InIEEE International Conference on Acous-
+tics, Speech and Signal Processing (ICASSP), 2021. 8
+[35] Ilker Kesen, Andrea Pedrotti, Mustafa Dogan, Michele
+Cafagna, Emre Can Acikgoz, Letitia Parcalabescu, Iacer
+Calixto, Anette Frank, Albert Gatt, Aykut Erdem, and Erkut
+Erdem. ViLMA: A Zero-Shot Benchmark for Linguistic and
+Temporal Grounding in Video-Language Models. InInter-
+national Conference on Learning Representations (ICLR),
+
+2024. 2
+[36] Alexander Kirillov, Eric Mintun, Nikhila Ravi, Hanzi Mao,
+Chloe Rolland, Laura Gustafson, Tete Xiao, Spencer White-
+head, Alexander C Berg, Wan-Yen Lo, et al. Segment any-
+thing. InProceedings of the IEEE/CVF International Con-
+ference on Computer Vision (ICCV), 2023. 5
+[37] Nikita Kitaev and Dan Klein. Constituency parsing with a
+self-attentive encoder. InProceedings of the Annual Meet-
+ing of the Association for Computational Linguistics (ACL),
+2018. 5
+[38] Oleksii Kuchaiev, Jason Li, Huyen Nguyen, Oleksii
+Hrinchuk, Ryan Leary, Boris Ginsburg, Samuel Kriman,
+Stanislav Beliaev, Vitaly Lavrukhin, Jack Cook, Patrice Cas-
+tonguay, Mariya Popova, Jocelyn Huang, and Jonathan M.
+Cohen. NeMo: a toolkit for building AI applications using
+Neural Modules.arXiv preprint arXiv:1909.09577, 2019. 3
+[39] Bolin Lai, Xiaoliang Dai, Lawrence Chen, Guan Pang,
+James M Rehg, and Miao Liu. LEGO: Learning EGOcen-
+tric Action Frame Generation via Visual Instruction Tuning.
+InProceedings of the European Conference on Computer Vi-
+sion (ECCV), 2023. 3
+[40] Michael Land, Neil Mennie, and Jennifer Rusted. The roles
+of vision and eye movements in the control of activities of
+daily living.Perception, 1999. 5
+[41] Yong Jae Lee, Joydeep Ghosh, and Kristen Grauman. Dis-
+covering important people and objects for egocentric video
+summarization. InProceedings of the IEEE/CVF Confer-
+ence on Computer Vision and Pattern Recognition (CVPR),
+2012. 3
+[42] Bohao Li, Yuying Ge, Yixiao Ge, Guangzhi Wang, Rui
+Wang, Ruimao Zhang, and Ying Shan. SEED-Bench:
+Benchmarking Multimodal Large Language Models. InPro-
+ceedings of the IEEE/CVF Conference on Computer Vision
+and Pattern Recognition (CVPR), 2024. 2
+
+```
+[43] Kunchang Li, Yali Wang, Yinan He, Yizhuo Li, Yi Wang,
+Yi Liu, Zun Wang, Jilan Xu, Guo Chen, Ping Luo, et al.
+MVBench: A Comprehensive Multi-modal Video Under-
+standing Benchmark. In Proceedings of the IEEE/CVF
+Conference on Computer Vision and Pattern Recognition
+(CVPR), 2024.
+[44] Shicheng Li, Lei Li, Shuhuai Ren, Yuanxin Liu, Yi Liu, Run-
+dong Gao, Xu Sun, and Lu Hou. VITATECS: A Diagnos-
+tic Dataset for Temporal Concept Understanding of Video-
+Language Models. InProceedings of the European Confer-
+ence on Computer Vision (ECCV), 2024. 2
+[45] Yin Li, Miao Liu, and James M Rehg. In the eye of the
+beholder: Gaze and actions in first person video. IEEE
+Transactions on Pattern Analysis and Machine Intelligence
+(TPAMI), 2021. 3
+[46] Yunze Liu, Yun Liu, Che Jiang, Kangbo Lyu, Weikang Wan,
+Hao Shen, Boqiang Liang, Zhoujie Fu, He Wang, and Li
+Yi. HOI4D: A 4D Egocentric Dataset for Category-Level
+Human-Object Interaction. InProceedings of the IEEE/CVF
+Conference on Computer Vision and Pattern Recognition
+(CVPR), 2022. 6, 3
+[47] Zhaoyang Lv, Nickolas Charron, Pierre Moulon, Alexander
+Gamino, Cheng Peng, Chris Sweeney, Edward Miller, Huix-
+uan Tang, Jeff Meissner, Jing Dong, et al. Aria Everyday
+Activities Dataset.arXiv preprint arXiv:2402.13349, 2024.
+6, 3
+[48] Arjun Majumdar, Anurag Ajay, Xiaohan Zhang, Pranav
+Putta, Sriram Yenamandra, Mikael Henaff, Sneha Sil-
+wal, Paul Mcvay, Oleksandr Maksymets, Sergio Arnaud,
+Karmesh Yadav, Qiyang Li, Ben Newman, Mohit Sharma,
+Vincent Berges, Shiqi Zhang, Pulkit Agrawal, Yonatan Bisk,
+Dhruv Batra, Mrinal Kalakrishnan, Franziska Meier, Chris
+Paxton, Sasha Sax, and Aravind Rajeswaran. OpenEQA:
+Embodied Question Answering in the Era of Foundation
+Models. InProceedings of the IEEE/CVF Conference on
+Computer Vision and Pattern Recognition (CVPR), 2024. 2
+[49] Karttikeya Mangalam, Raiymbek Akshulakov, and Jitendra
+Malik. EgoSchema: A Diagnostic Benchmark for Very
+Long-form Video Language Understanding. Advances in
+Neural Information Processing Systems (NeurIPS), 2023. 2
+[50] Xiaqing Pan, Nicholas Charron, Yongqian Yang, Scott Pe-
+ters, Thomas Whelan, Chen Kong, Omkar Parkhi, Richard
+Newcombe, and Yuheng Carl Ren. Aria Digital Twin: A
+New Benchmark Dataset for Egocentric 3D Machine Percep-
+tion. InProceedings of the IEEE/CVF International Confer-
+ence on Computer Vision (ICCV), 2023. 2, 6, 3
+[51] Mandela Patrick, Dylan Campbell, Yuki M. Asano, Is-
+han Misra Florian Metze, Christoph Feichtenhofer, Andrea
+Vedaldi, and Jo ̃ao F. Henriques. Keeping your eye on the
+ball: Trajectory attention in video transformers. InAdvances
+in Neural Information Processing Systems (NeurIPS), 2021.
+7, 15
+[52] Rohith Peddi, Shivvrat Arya, Bharath Challa, Likhitha Pal-
+lapothula, Akshay Vyas, Bhavya Gouripeddi, Jikai Wang,
+Qifan Zhang, Vasundhara Komaragiri, Eric Ragan, Nicholas
+Ruozzi, Yu Xiang, and Vibhav Gogate. CaptainCook4D: A
+Dataset for Understanding Errors in Procedural Activities. In
+```
+
+Proceedings of the Neural Information Processing Systems
+(NeurIPS) Track on Datasets and Benchmarks, 2024. 3
+[53] Federico Perazzi, Jordi Pont-Tuset, Brian McWilliams, Luc
+Van Gool, Markus Gross, and Alexander Sorkine-Hornung.
+A benchmark dataset and evaluation methodology for video
+object segmentation. InProceedings of the IEEE/CVF
+Conference on Computer Vision and Pattern Recognition
+(CVPR), 2016. 15
+[54] Toby Perrett, Tengda Han, Dima Damen, and Andrew Zis-
+serman. It’s just another day: Unique video captioning by
+discriminitave prompting. InProceedings of the Asian Con-
+ference on Computer Vision (ACCV), 2024. 2
+[55] Hamed Pirsiavash and Deva Ramanan. Detecting activities
+of daily living in first-person camera views. InProceedings
+of the IEEE/CVF Conference on Computer Vision and Pat-
+tern Recognition (CVPR), 2012. 3
+[56] Chiara Plizzari, Shubham Goel, Toby Perrett, Jacob Chalk,
+Angjoo Kanazawa, and Dima Damen. Spatial Cognition
+from Egocentric Video: Out of Sight, Not Out of Mind. In
+Proceedings of the IEEE International Conference on 3D Vi-
+sion (3DV), 2025. 7
+[57] Jordi Pont-Tuset, Federico Perazzi, Sergi Caelles, Pablo Ar-
+belaez, Alexander Sorkine-Hornung, and Luc Van Gool. ́
+The 2017 davis challenge on video object segmentation.
+arXiv:1704.00675, 2017. 15
+[58] Viorica P ̆atraucean, Lucas Smaira, Ankush Gupta, Adri ̆ `a Re-
+casens Continente, Larisa Markeeva, Dylan Banarse, Skanda
+Koppula, Joseph Heyward, Mateusz Malinowski, Yi Yang,
+Carl Doersch, Tatiana Matejovicova, Yury Sulsky, Antoine
+Miech, Alex Frechette, Hanna Klimczak, Raphael Koster,
+Junlin Zhang, Stephanie Winkler, Yusuf Aytar, Simon Osin-
+dero, Dima Damen, Andrew Zisserman, and Jo ̃ao Carreira.
+Perception test: A diagnostic benchmark for multimodal
+video models. InAdvances in Neural Information Process-
+ing Systems (NeurIPS), 2023. 2
+[59] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya
+Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry,
+Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learn-
+ing transferable visual models from natural language super-
+vision. InInternational Conference on Machine Learning
+(ICML), 2021. 2
+[60] Alec Radford, Jong Wook Kim, Tao Xu, Greg Brockman,
+Christine McLeavey, and Ilya Sutskever. Robust speech
+recognition via large-scale weak supervision. InInterna-
+tional Conference on Machine Learning (ICML), 2023. 3
+[61] Francesco Ragusa, Antonino Furnari, Sebastiano Battiato,
+Giovanni Signorello, and Giovanni Maria Farinella. EGO-
+CH: Dataset and fundamental tasks for visitors behavioral
+understanding using egocentric vision.Pattern Recognition
+Letters, 2020. 3
+[62] Francesco Ragusa, Antonino Furnari, Salvatore Livatino,
+and Giovanni Maria Farinella. The MECCANO Dataset:
+Understanding Human-Object Interactions from Egocentric
+Videos in an Industrial-like Domain. InProceedings of the
+IEEE/CVF Winter Conference on Applications of Computer
+Vision (WACV), 2021. 3
+[63] Santhosh K Ramakrishnan, Aaron Gokaslan, Erik Wijmans,
+Oleksandr Maksymets, Alex Clegg, John Turner, Eric Un-
+
+```
+dersander, Wojciech Galuba, Andrew Westbury, Angel X
+Chang, et al. Habitat-Matterport 3D Dataset (HM3D): 1000
+Large-scale 3D Environments for Embodied AI. InAd-
+vances in Neural Information Processing Systems (NeurIPS)
+Datasets and Benchmarks Track, 2021. 2
+[64] Nikhila Ravi, Valentin Gabeur, Yuan-Ting Hu, Ronghang
+Hu, Chaitanya Ryali, Tengyu Ma, Haitham Khedr, Roman
+Radle, Chloe Rolland, Laura Gustafson, et al. ̈ SAM 2:
+Segment anything in images and videos. arXiv preprint
+arXiv:2408.00714, 2024. 5, 8, 7, 15
+[65] Johannes Lutz Sch ̈onberger and Jan-Michael Frahm.
+Structure-from-motion revisited. InProceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern
+Recognition (CVPR), 2016. 2
+[66] Johannes Lutz Schonberger, Enliang Zheng, Marc Pollefeys, ̈
+and Jan-Michael Frahm. Pixelwise view selection for un-
+structured multi-view stereo. InProceedings of the European
+Conference on Computer Vision (ECCV), 2016. 2
+[67] Tim J Schoonbeek, Tim Houben, Hans Onvlee, Fons van der
+Sommen, et al. IndustReal: A Dataset for Procedure
+Step Recognition Handling Execution Errors in Egocentric
+Videos in an Industrial-Like Setting. InProceedings of the
+IEEE/CVF Winter Conference on Applications of Computer
+Vision (WACV), 2024. 3
+[68] Fadime Sener, Dibyadip Chatterjee, Daniel Shelepov, Kun
+He, Dipika Singhania, Robert Wang, and Angela Yao. As-
+sembly101: A large-scale multi-view video dataset for un-
+derstanding procedural activities. InProceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern
+Recognition (CVPR), 2022. 2, 6, 3
+[69] Gunnar A Sigurdsson, Abhinav Gupta, Cordelia Schmid, Ali
+Farhadi, and Karteek Alahari. Actor and observer: Joint
+modeling of first and third-person videos. InProceedings of
+the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition (CVPR), 2018. 3
+[70] Amanpreet Singh, Ronghang Hu, Vedanuj Goswami, Guil-
+laume Couairon, Wojciech Galuba, Marcus Rohrbach, and
+Douwe Kiela. FLAVA: A foundational language and vision
+alignment model. InProceedings of the IEEE/CVF Confer-
+ence on Computer Vision and Pattern Recognition (CVPR),
+```
+2022. 2
+[71] Krishna Kumar Singh, Kayvon Fatahalian, and Alexei A
+Efros. Krishnacam: Using a longitudinal, single-person,
+egocentric dataset for scene understanding tasks. InPro-
+ceedings of the IEEE Winter Conference on Applications of
+Computer Vision (WACV), 2016. 3
+[72] Kiran K. Somasundaram, Jing Dong, Huixuan Tang, Ju-
+lian Straub, Mingfei Yan, Michael Goesele, Jakob J. Engel,
+Renzo De Nardi, and Richard A. Newcombe. Project Aria:
+A New Tool for Egocentric Multi-Modal AI Research.arXiv
+preprint arXiv:2308.13561, 2023. 3, 1
+[73] Yale Song, Eugene Byrne, Tushar Nagarajan, Huiyu Wang,
+Miguel Martin, and Lorenzo Torresani. Ego4D Goal-Step:
+Toward Hierarchical Understanding of Procedural Activi-
+ties. Advances in Neural Information Processing Systems
+(NeurIPS), 2024. 3
+[74] Julian Straub, Daniel DeTone, Tianwei Shen, Nan Yang,
+Chris Sweeney, and Richard Newcombe. EFM3D: A Bench-
+
+
+mark for Measuring Progress Towards 3D Egocentric Foun-
+dation Models. arXiv preprint arXiv:2406.10224, 2024. 6,
+3
+[75] Gemini Team, Petko Georgiev, Ving Ian Lei, Ryan Burnell,
+Libin Bai, Anmol Gulati, Garrett Tanzer, Damien Vincent,
+Zhufeng Pan, Shibo Wang, et al. Gemini 1.5: Unlocking
+multimodal understanding across millions of tokens of con-
+text.arXiv preprint arXiv:2403.05530, 2024. 7, 14
+[76] Zhan Tong, Yibing Song, Jue Wang, and Limin Wang.
+VideoMAE: Masked autoencoders are data-efficient learners
+for self-supervised video pre-training. InAdvances in Neural
+Information Processing Systems (NeurIPS), 2022. 7, 15
+[77] Vadim Tschernezki, Ahmad Darkhalil, Zhifan Zhu, David
+Fouhey, Iro Larina, Diane Larlus, Dima Damen, and Andrea
+Vedaldi. EPIC Fields: Marrying 3D Geometry and Video
+Understanding. InAdvances in Neural Information Process-
+ing Systems (NeurIPS), 2023. 2
+[78] Andong Wang, Bo Wu, Sunli Chen, Zhenfang Chen, Hao-
+tian Guan, Wei-Ning Lee, Li Erran Li, and Chuang Gan.
+SOK-Bench: A Situated Video Reasoning Benchmark with
+Aligned Open-World Knowledge. InProceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern
+Recognition (CVPR), 2024. 2
+[79] Wenhai Wang, Jifeng Dai, Zhe Chen, Zhenhang Huang,
+Zhiqi Li, Xizhou Zhu, Xiaowei Hu, Tong Lu, Lewei Lu,
+Hongsheng Li, et al. InternImage: Exploring Large-Scale
+Vision Foundation Models with Deformable Convolutions.
+InProceedings of the IEEE/CVF Conference on Computer
+Vision and Pattern Recognition (CVPR), 2023. 2
+[80] Xin Wang, Taein Kwon, Mahdi Rad, Bowen Pan, Ishani
+Chakraborty, Sean Andrist, Dan Bohus, Ashley Feniello, Bu-
+gra Tekin, Felipe Vieira Frujeri, Neel Joshi, and Marc Polle-
+feys. HoloAssist: an Egocentric Human Interaction Dataset
+for Interactive AI Assistants in the Real World. InProceed-
+ings of the IEEE/CVF International Conference on Com-
+puter Vision (ICCV), 2023. 2, 6, 3
+[81] Bin Xiao, Haiping Wu, Weijian Xu, Xiyang Dai, Houdong
+Hu, Yumao Lu, Michael Zeng, Ce Liu, and Lu Yuan.
+Florence-2: Advancing a unified representation for a variety
+of vision tasks. InProceedings of the IEEE/CVF Conference
+on Computer Vision and Pattern Recognition (CVPR), 2024.
+2
+[82] Junbin Xiao, Angela Yao, Yicong Li, and Tat-Seng Chua.
+Can I trust your answer? Visually grounded video question
+answering. InProceedings of the IEEE/CVF Conference on
+Computer Vision and Pattern Recognition (CVPR), 2024. 7
+[83] Ning Xu, Linjie Yang, Yuchen Fan, Dingcheng Yue, Yuchen
+Liang, Jianchao Yang, and Thomas Huang. YouTube-VOS:
+A large-scale video object segmentation benchmark. arXiv
+preprint arXiv:1809.03327, 2018. 15
+[84] Linjie Yang, Yuchen Fan, and Ning Xu. The 2nd large-scale
+video object segmentation challenge - video object segmen-
+tation track, 2019. 15
+[85] Lihe Yang, Bingyi Kang, Zilong Huang, Xiaogang Xu, Jiashi
+Feng, and Hengshuang Zhao. Depth Anything: Unleashing
+the Power of Large-Scale Unlabeled Data. InProceedings of
+the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition (CVPR), 2024. 5
+
+```
+[86] Hanrong Ye, Haotian Zhang, Erik Daxberger, Lin Chen,
+Zongyu Lin, Yanghao Li, Bowen Zhang, Haoxuan You, Dan
+Xu, Zhe Gan, et al. MM-Ego: Towards Building Egocentric
+Multimodal LLMs. InInternational Conference on Learning
+Representations (ICLR), 2025. 2
+[87] Brent Yi, Vickie Ye, Maya Zheng, Lea Muller, Georgios ̈
+Pavlakos, Yi Ma, Jitendra Malik, and Angjoo Kanazawa. Es-
+timating body and hand motion in an ego-sensed world. In
+Proceedings of the IEEE/CVF Conference on Computer Vi-
+sion and Pattern Recognition (CVPR), 2025. 5
+[88] Hang Zhang, Xin Li, and Lidong Bing. Video-LLaMA: An
+Instruction-tuned Audio-Visual Language Model for Video
+Understanding.Proceedings of the Conference on Empirical
+Methods in Natural Language Processing (EMNLP), 2023.
+2
+[89] Peiyuan Zhang, Kaichen Zhang, Bo Li, Guangtao Zeng,
+Jingkang Yang, Yuanhan Zhang, Ziyue Wang, Haoran Tan,
+Chunyuan Li, and Ziwei Liu. Long context transfer from
+language to vision.arXiv preprint arXiv:2406.16852, 2024.
+7, 14
+[90] Yuanhan Zhang, Jinming Wu, Wei Li, Bo Li, Zejun Ma, Zi-
+wei Liu, and Chunyuan Li. Video instruction tuning with
+synthetic data.arXiv preprint arXiv:2410.02713, 2024. 7,
+14
+[91] Yunhan Zhao, Haoyu Ma, Shu Kong, and Charless Fowlkes.
+Instance tracking in 3D scenes from egocentric videos. In
+Proceedings of the IEEE/CVF Conference on Computer Vi-
+sion and Pattern Recognition (CVPR), 2024. 2, 3
+[92] Zijia Zhao, Haoyu Lu, Yuqi Huo, Yifan Du, Tongtian Yue,
+Longteng Guo, Bingning Wang, Weipeng Chen, and Jing
+Liu. Needle In A Video Haystack: A Scalable Synthetic
+Framework for Benchmarking Video MLLMs. InInter-
+national Conference on Learning Representations (ICLR),
+```
+2025. 2
+[93] Luowei Zhou, Chenliang Xu, and Jason Corso. Towards
+automatic learning of procedures from web instructional
+videos. InProceedings of the AAAI Conference on Artificial
+Intelligence, 2018. 2
+
+
+## HD-EPIC: A Highly-Detailed Egocentric Video Dataset
+
+## Supplementary Material
+
+### Contents
+
+A. Video Showcase 1
+
+B. Data Collection 1
+B.1. Recruitment and Equipment......... 1
+B.2. Instructions and Collected Data....... 1
+B.3. Narrations.................. 2
+B.4. Post-Processing: Multi-Video SLAM and Gaze 2
+
+C. Annotation Pipeline 3
+C.1. Annotating Recipe Steps and Ingredients.. 3
+C.2. Fine-Grained Actions............. 3
+C.3. Digital Twin................. 6
+C.4. Density of Our Annotations......... 8
+
+D. Benchmark and Results 8
+D.1. VQA Benchmark Details........... 9
+D.2. Additional VQA Experiments........ 13
+D.3. VQA Model Details............. 14
+D.4. Long-Term VOS Benchmark......... 15
+D.5. Recognition Benchmarks........... 15
+
+### A. Video Showcase
+
+We share a video showcasing our annotations on our web-
+page:http://hd-epic.github.iocontaining three
+parts.
+start→01:16. Annotations overview. This is a walk-
+through of Fig. 1, showing our annotation hierarchy and
+how annotations are linked to the 3D Digital Twin.
+01:16→04:24. Annotation showcase on one sequence
+from one kitchen.For one video, we show a walk through
+of the various annotations on this same video.
+04:25→end. Annotation examples from other kitchens.
+First are examples of our highly-detailed narrations, fol-
+lowed by examples of hand and object segmentations. We
+then present audio annotations with waveforms. Next, ex-
+amples of object-fixture assignment are shown in the Digital
+Twin. Finally, examples of ingredient nutrition, running to-
+tal nutrition, and total nutrition for whole recipes are shown.
+
+### B. Data Collection
+
+In this section, we provide more details of: the recruitment
+and equipment used in Sec. B.1; instructions and collected
+data in Sec. B.2; narrations in Sec. B.3; and Post-Processing
+in Sec. B.4.
+
+```
+Day 1 Day 2 Day 3 Overflow
+```
+```
+Phone
+Weighing Scale
+```
+```
+PowerBank
+```
+```
+InstructionsRecording
+```
+```
+Aria Glasses
+```
+```
+Figure A1. Participant P04 unpacking the data recording equip-
+ment.
+```
+#### B.1. Recruitment and Equipment
+
+```
+Each participant engaged in a long-time commitment (avg.
+50 hours): data collection, reviewing footage, and provid-
+ing detailed narrations including activities/recipe/nutrition
+information. Participants signed a consent form and a data
+release form after which they were rewarded monetarily. In
+Fig. A1, we show the devices provided to participants for
+the data collection, packaged tightly in one backpack that
+the participants took home. Data collection was carried out
+using Project Aria devices [72]—a multi-sensor platform,
+in the form factor of a pair of glasses^1 , with 3 front facing
+cameras (1 RGB and 2 SLAM), 7 microphones and inward
+facing cameras for gaze estimation^2. Due to the storage lim-
+its, four devices were provided to each participant. We sup-
+plied a smartphone with the Aria Mobile Companion app,
+with all four devices already registered, as well as the My-
+FitnessPal app [3] installed. Due to battery life limits, de-
+vices were sometimes wired to a pocket-carried power bank
+whilst recording long sessions. Participants also received
+recording instructions and a set of digital weighing scales
+for nutritional tracking. The scales’ display is clear to read,
+to enable OCR readings.
+```
+#### B.2. Instructions and Collected Data
+
+```
+Participants were recruited to record their daily kitchen ac-
+tivities for at least three consecutive days. All record-
+ings were unscripted: participants were asked to wear the
+glasses every time they walked into their kitchen, press-
+ing the recording button upon entering, and stopping the
+recording when they left the kitchen. Videos were recorded
+between January and July 2024. The number of hours col-
+lected per participant ranged from 3.5 to 7.2, with an av-
+```
+(^1) Participants who require glasses and cannot use lenses were excluded
+(^2) We used Profile 28— 1408 × 1408 resolution 30 FPS RGB footage,
+60 FPS eye tracking, 30 FPS SLAM
+
+
+```
+Figure A2. Dataset Statistics: Comparison with EPIC-Kitchens, Ego4D and Ego-Exo4D.
+```
+erage of 4.6. We collected a total of 156 videos, with an
+average length of 15.9 (± 14. 5 ) mins. In total, we collected
+41.3 hours (4.46M frames) of footage from 9 participants.
+
+Following data collection, participants provided the
+recipe they freely prepared. They cited the source of the
+recipe (e.g. online website or cookbook) and any modifi-
+cations to ingredients or steps. We collected a total of 69
+recipes from the 9 participants. Our recipes cover vari-
+ous cuisines including: Masala Dosa (Indian), Cacio e Pepe
+(Italian), Sfesiha (Lebanese), and Banana Bread Chocolate
+Chip Cookies (American) with an average (max) of 6.6 (18)
+steps and 8.1 (24) ingredients per recipe. Additionally, par-
+ticipants provided time segments (as start-end times) cov-
+ering each step of their recipes. Recipes typically expand
+over several videos, on average taking 4 hours and 48 min-
+utes to complete across 2.1 videos from starting preparation
+to conclusion^3. Our longest captured recipe (P03R03) took
+2 days and 6 hours to complete.
+
+```
+We found that participants would interleave the prepara-
+tion of multiple dishes, often preparing several courses si-
+multaneously (e.g. salad or dessert while preparing a main).
+Whilst natural in daily routines, this has not been cap-
+tured in previous recordings which consist of edited online
+videos [93] or short recipes captured under controlled set-
+tings [29].
+```
+```
+To track the nutrition values of prepared meals, we in-
+structed participants to weigh ingredients using the digi-
+tal scales and log nutrition values via the provided My-
+FitnessPal app. By combining the weight and ingredi-
+ent information, detailed nutrition information associated
+with recipes were collected, adding an interesting dimen-
+sion where we can estimate the weighed ingredients from
+visual data. While spices are often included as ingredients,
+we do not capture their nutrition values as they rarely al-
+ter these values and are mainly included to improve the
+dish’s taste. In total, participants used 558 ingredients in-
+cluding: high protein ingredients such as tuna and kidney
+beans, high carb such as dates and flour, and high fat such
+as sour cream and pine nuts. Participants prepared both high
+calorific meals such as Lazy Cake Recipe (P01R05, 4.8K
+calories) and low-calorie meals including Crispy Cucumber
+Salad (P08R09, 274 calories).
+```
+#### B.3. Narrations
+
+```
+We collect sentences detailing the actions carried out by
+participants in each video. Following [18], we instruct
+the participants to record spoken narrations of all actions
+throughout the videos and re-purpose the web-based narra-
+tor tool used in [29] for expert commentary. Using the tool,
+participants pause the video and record a narration when-
+ever they observe an action and provide detailed narrations
+which include at least one verb and noun, and information
+aboutwhatthey didwhyandhowthey did it when relevant.
+This results in a rich set of narrations which are
+denser and more detailed than previous egocentric datasets.
+Fig. A2 shows that HD-EPIC narrations are much denser
+with a higher words per sentence and words per minute
+than Ego-Exo4D, the next densest dataset, demonstrating
+a significant increase in detail. We also see increases in the
+numbers of nouns and verbs per sentence as sentences de-
+scribe actions in more detail, even common actions are de-
+scribed uniquely—e.g. ‘pick plate from a pile of plates us-
+ing the right hand’ and ‘pick plate from a lower shelf using
+the left hand’. In total, 81% of all narrations in HD-EPIC
+are unique sentences, compared to only 31% in Ego-Exo4D,
+22% in Ego4D, and 15% in EPIC-KITCHENS. Non-unique
+narrations have recently been identified as a concern in re-
+cent works [54].
+```
+#### B.4. Post-Processing: Multi-Video SLAM and Gaze
+
+```
+We make use of the Multi-Video SLAM API provided
+by the Aria Machine Perception Services (MPS) [1] to
+reconstruct a single point cloud from all recordings ob-
+tained in a kitchen, across multiple days. It is important
+to highlight that no additional scanning is used to recon-
+struct the scene—it is simply reconstructed from the un-
+scripted recordings. We obtain the 3D point clouds and 2D
+tracked points along with camera trajectories consisting of
+1kHz frequency and 6DoF, estimated using odometry, for
+all videos. Out of the 156 videos, 3 videos could not be
+successfully processed via SLAM API. For these videos,
+we run COLMAP [65, 66] following EPIC Fields [77] pre-
+processing to obtain camera poses and manually align them
+to the corresponding kitchen obtained from MPS.
+We also use the MPS services to obtain yaw and pitch
+```
+(^3) In contrast, Ego-Exo4D recipes are 8.5 mins on average.
+
+
+Dataset Val&Test Action Unscripted Free Recipe Nutrition Gaze Audio Object Hand 3D object Labelled 3D Camera Fully
+Hours Segments Setting Labels over time environment pose annotated
+CMU-MMAC [20] 16.6 ✓✗✗✗✗✗✗✗✗✗✗✗✗
+ADL [55] 5.8 ✓✓✓✗✗✗✗ B-Box ✗✗✗✗✓
+UTE [41] 16.9 ✗✓✓✗✗✗✗ Polygon ✗✗✗✗✓
+KrishnaCam [71] 14.0 ✗✓✓✗✗✗✗✗✗✗✗✗✓
+Charades-EGO [69] 6.7^1 ✓✗✓✗✗✗✗✗✗✗✗✗✓
+EGO-CH [61] 26.5 ✓✓✗✗✗✗✗ B-Box ✗✗✗✗✗
+MECCANO [62] 3.0 ✓✗✗✗✗✓✗ B-Box B-Box ✗✗✗✓
+EGTEA Gaze+ [45] 19.1 ✓✗✗✗✗✓✗✗ Mask ✗✗✗✓
+HOI4D [46] 11.4 ✓✗✗✗✗✗✗ Mask Mask ✓✓✗✓
+Assembly101 [68] 66.8^1 ✓✗✗✗✗✗✗✗ 3D pose ✗✗✗✓
+EPIC-KITCHENS-100 [18] 25.3 ✓✓✓✗✗✗✓ Mask Mask ✓✗✓✗
+Ego4D [28] 288.7^2 ✓✓✓✗✗✗✗ B-Box B-Box ✗✗✗✗
+HoloAssist [80] 49.8 ✓✗✗✗✗✓✗✗ 3D pose ✗✗✓✓
+Aria Digital Twin [50] 8.1 ✗✗✗✗✗✓✗ Mask ✗✓✓✓✓
+Aria Everyday Activities [47] 7.3 ✗✗✓✗✗✓✗✗✗✗✗✓✗
+Aria Everyday Objects [74] 0.4 ✗✓✓✗✗✗✗ B-Box ✗✓✗✓✓
+IndustReal [67] 3.5 ✓✗✗✗✗✓✗✗ 3D pose ✗✗✗✓
+IT3DEgo [91] 4.6 ✗✓✓✗✗✗✗ B-Box ✗✓✗✓✓
+CaptainCook4D [52] 42.5 ✓^3 ✗✗✓^4 ✗✗✗✗ 3D pose ✗✗✓✗
+Ego-Exo4D [29] 85.1 ✗✓✓✓^3 ✗✓✗ Mask 3D pose ✗✗✓✗
+HD-EPIC 41.3 ✓✓✓✓✓✓✓ Mask Mask ✓✓✓✓
+
+```
+Table A1. Comparing egocentric video datasets.^1 Subset of egocentric videos.^2 Episodic Memory, Hands+Object and Forecasting bench-
+marks.^3 Only key steps annotated.
+```
+```
+angle for eye gaze and obtain a unit vector along the gaze
+direction by anchoring it to the central pupil frame. The
+depth of the gaze vector is estimated by projecting it into
+the world frame and obtaining its first intersection with any
+surface on the 3D space. We then use the device calibra-
+tion and project the ray to obtain 2D location on the image
+frame. After gaze is calculated, we remove the gaze camera
+input from all VRS files for anonymity.
+```
+```
+We also provide additional information on the anonymi-
+sation process for videos. To ensure the privacy of the par-
+ticipants, faces were anonymised in the rare case where they
+are visible due to reflections or accidental capture. Partici-
+pants were asked to view their videos and notify us of cases
+where faces or identifiable information was present, we also
+anonymised videos which we found to need anonymisation.
+We then used black boxes to mask these faces/identifiable
+information to avoid potential regeneration. In total 8
+videos were marked for anonymisation (6% of our 156
+videos)—we redacted a total of 2774 frames. Correspond-
+ingly, we manually marked and anonymised these frames in
+the two gray-scaled SLAM cameras stored in the VRS files.
+```
+```
+We separately post-process the VRS files to convert them
+to mp4. For the audio, we select channels 5 and 6 to get
+a binaural audio out of the 7 audio channels in the input
+recording. We select these channels as they are closer to the
+ears and remove other audio channels to mitigate breathing
+noises. We then extract the frames from VRS matching the
+audio timestamp. Finally, we obtain a video with 30 FPS
+and binaural audio with 48 kHz sampling rate. These videos
+are used in all follow-up annotations and benchmarking.
+```
+### C. Annotation Pipeline
+
+#### C.1. Annotating Recipe Steps and Ingredients
+
+```
+We match the annotated start-end times to recipes steps to
+automatically compile ‘recipe videos’, which we use for
+annotating recipe steps and ingredients. We further link
+recipes, steps, and ingredients by annotating time segments
+where ingredients are added to the recipe. For each ingre-
+dient, we temporally annotate the weighing and adding ac-
+tions. The weighing segments allow tracking the amount
+of each ingredient from zero to the total used in the dish
+whereas the adding segments mark when an ingredient is
+incorporated in the recipe. When weighing is performed
+with the scales, we obtain automatic OCR readings of the
+scales which are manually verified and checked to ensure
+the full amount matches the quantity in the nutrition infor-
+mation provided by the partcipant. Fig. A3 visualises the
+annotations per ingredient.
+```
+#### C.2. Fine-Grained Actions
+
+```
+C.2.1 Transcriptions
+```
+```
+The audio narrations, provided by the participants are first
+converted into timestamped transcriptions. We use an en-
+semble of audio transcription models, namely Whisper [60],
+Qwen-Audio [14] and Nemo [38], to improve the quality of
+transcriptions. We find that each of these models makes a
+different set of errors in understanding the diverse spoken
+accent of participants, so we opt for the consensus of mod-
+els along with manual checks. For each narration, we select
+a transcription from one of these models based on a num-
+ber of checks. Transcriptions with spelling errors or words
+```
+
+```
+Figure A3. Per ingredient, we temporally label weighing (if present) and adding to recipe. Weighing is OCRed and manually verified.
+```
+not in a whitelisted kitchen vocabulary, which we populate
+during transcription cleaning, are excluded. If there is more
+than one unique transcription, we select the highest model
+confidence. If all transcriptions are excluded by the spelling
+or whitelist checks, but multiple models have produced the
+same transcription, then we select this transcription. Other-
+wise the Whisper transcription is selected as a default. We
+then manually check all candidate transcriptions using ded-
+icated human checkers, who listen to the audio and verify
+or correct the transcription. We then fix typos and obtain a
+set of cleaned detailed transcriptions.
+
+C.2.2 Action Annotations
+
+For each narration, we label the precise time segment
+bounded by when the action in the narration starts and con-
+cludes, using AMT workers. We divide the video into HITs
+of 10 consecutive narrations. Multiple annotators (Ka≥ 3 )
+are tasked to annotate both start and end times of the seg-
+ment containing the narrated action, primed by the times-
+tamp, denoted byAi =[tsi,tei]. The option to skip an
+action is also provided to the annotators if they are unable
+to find it in the video; accounting for rare cases when the
+action occurs off-camera. The interface used to annotate
+action boundaries is shown in Fig. A4. We ensure we have
+sufficient inter-annotator agreements between at least three
+annotators, adding annotators until satisfied.
+We select the best annotation by measuring inter-
+annotator agreement. For narration i, let Ai(j) rep-
+resent the annotation from annotator j. The agree-
+ment score for annotatorj on narrationi isαi(j) =
+1
+Ka∑
+
+Ka
+k= 1 IOU(Ai(j),Ai(k)), where IOU is temporal
+intersection-over-union. The average agreement score
+
+across the HIT isα(j)= N^1 H∑
+NH
+i= 1 αi(j), withNHac-
+
+```
+tions per HIT. We select the best annotatorˆjas the one with
+the highest average agreement on their three lowest-scoring
+actions and similarly findˆkas the second-best annotator.
+The ground-truth action segmentAiis then found as:
+```
+```
+Ai={
+```
+```
+Union(Ai(ˆj),Ai(ˆk)), ifIoU(Ai(ˆj),Ai(ˆk))> 0. 5
+Ai(ˆj), otherwise
+(1)
+where we choose to merge annotations from the two best
+annotators for an action segment if they have a strong agree-
+ment, which helps to avoid overly tight segments [17].
+To ensure annotation quality, we require minimum an-
+notator agreementmin(α(j))≥ 0. 3 for each HIT. Failed
+HITs are re-attempted with up to 3 new annotators, then
+manually annotated if still below threshold. We also per-
+form quality checks on randomly sampled action segments.
+```
+```
+C.2.3 Parsing and Clustering
+```
+```
+We next parse the open vocabulary narrations so they can
+be used for tasks that expect a closed vocabulary, such as
+action recognition. Additionally, we wish to identify the
+parts of the narration where the participant is detailing the
+manner in which the action was carried out and the goal
+achieved by carrying out the action. We achieve these by
+parsing these open vocabulary narrations as follows. As
+a result of the fine-grained nature of the collected narra-
+tions, it was expected that LLMs with their impressive per-
+formance in NLP tasks would provide better results com-
+pared to smaller language models. To that end different
+open source LLMs were tested for the task of extracting the
+pairs of nouns and verbs and identifying the main action.
+Initial testing showed mixed results with hallucinations be-
+ing a major issue. Even though a combination of different
+```
+
+```
+Figure A4. Interface for annotating action boundaries
+```
+prompting techniques such as few-shot prompting improved
+the results, given the number of narrations, the results were
+too unpredictable.
+
+Each narration transcription is parsed into nouns, verbs,
+and any noted hands (Left/Right/Both) using spaCy’s Part-
+of-Speech tagging [30]. To better identify compound nouns,
+we supplement spaCy’s noun chunks with Constituency
+Parsing [37], and use pattern matching to filter out irrele-
+vant parts, such as articles. For pronouns (e.g. ‘it’s’), we
+use the co-reference resolution within the spaCy pipeline
+along with heuristics to replace these with corresponding
+nouns, selecting from the directly preceding narration. We
+also identify the primary verb-noun pairs, as the ‘ROOT’
+verb in spaCy with its corresponding noun, to form the main
+action. To enhance accuracy, we also apply heuristics to
+de-prioritize some verbs (e.g. “use something”) from being
+considered the main action. We show some parsing exam-
+ples in Table A2.
+
+Similar to the POS tagging, clustering nouns and verbs
+using LLMs was too noisy and inconsistent. The clusters
+from [18] were used in addition to a combination of heuris-
+tics, word embeddings, and manual assignment to assign
+any new verbs or nouns to these clusters. We assigned
+1 , 172 new verbs (such asbrew,simmer,burn) and 16 , 812
+new nouns (e.g.mortar,nutmeg,glue) to the clusters. We
+additionally added 9 new verb clusters and 3 new noun clus-
+
+```
+ters which did not fit in the clusters from [18].
+```
+```
+C.2.4 Sound Annotations
+```
+```
+We follow a procedure similar to [31] to collect audio an-
+notations. First, we only use a stereo 2-channel audio, ex-
+tracted from the 5thand 7thmicrophones. These offer the
+closest audio input to the two ears and in our experience de-
+creases the presence of breathing sounds in the audio signal,
+thus better allowing annotators to focus on the sound event.
+We divide the untrimmed audio, for one video, into chunks
+based on a silence threshold to provide manageable project
+sizes to the annotators, whilst avoiding splitting an ongoing
+sound.
+We use a modified version of the VIA Interface [22].
+Annotators were tasked with listening to the audio and la-
+belling the start and end times of any distinct audio event
+they heard. They selected labels from the classes from [31],
+though annotators could still provide a free-form text de-
+scription. We post-process the annotations, typo-correcting
+free-form text descriptions and grouping into the classes
+from [31]. We did not find a sufficient number of new free-
+form text descriptions to warrant additional classes, hence
+the classes match that of [31].
+To reduce label noise, we used a customised version of
+the LISA [4] interface. Here, the annotators were provided
+```
+
+```
+Narration Verbs Nouns Hands Main Action How Why
+Transferring the plate stack to my right hand
+so that I can turn off the tap with my left
+hand.
+```
+```
+transfer plate stack, tap right hand,
+left hand
+```
+```
+transfer plate
+stack
+```
+- so that I can turn off the tap with
+    left hand
+
+```
+Push the bag of potatoes along the bottom
+shelf of the fridge so that I can close the
+fridge.
+```
+```
+push bag of potatoes,
+bottom shelf of
+fridge, fridge
+```
+- push bag of
+    potatoes
+       - so that I can close the fridge
+
+```
+Pick up the two chopped lemon pieces using
+both hands so as to weigh them.
+```
+```
+pick up two chopped
+lemon pieces
+```
+```
+both hands pick up two
+chopped lemon
+pieces
+```
+```
+using both hands to weigh them
+```
+```
+Brush bit of onion skin off the chopping
+board using the knife in my right hand be-
+cause I don’t want to accidentally eat it.
+```
+```
+brush bit of onion
+skin, chopping
+board, knife
+```
+```
+right hand brush bit of
+onion skin
+```
+```
+using the knife in my right hand because I don’t want to acciden-
+tally eat it
+```
+```
+Shake the foil wrapping to make sure it is
+empty.
+```
+```
+shake foil wrapping - shake foil wrap-
+ping
+```
+- to make sure it is empty
+
+```
+Turn on the gas burner by twisting the dial
+in the right hand and pressing down the ig-
+nition switch in the left hand.
+```
+```
+turn on,
+twist,
+press
+```
+```
+gas burner, dial,
+ignition switch
+```
+```
+right hand,
+left hand
+```
+```
+turn on gas
+burner
+```
+```
+by twisting the dial in the right
+hand and pressing down the ig-
+nition switch in the left hand
+```
+-
+
+```
+I open the washing up liquid bottle by flick-
+ing the bottle lid up with my right hand.
+```
+```
+open, flick
+up
+```
+```
+washing up liq-
+uid bottle, bottle
+lid
+```
+```
+right hand open washing
+up liquid bottle
+```
+```
+by flicking the bottle lid up with
+right hand
+```
+-
+
+```
+Wipe down the countertop using the wet
+kitchen roll in the right hand, pushing the
+food and sugar into the food bin that’s held
+next to the countertop using the left hand.
+```
+```
+wipe
+down,
+push
+```
+```
+countertop, wet
+kitchen roll,
+food, sugar,
+food bin
+```
+```
+right hand,
+left hand
+```
+```
+wipe down
+countertop
+```
+```
+using the wet kitchen roll in
+the right hand, pushing the food
+and sugar into the food bin held
+next to the countertop using the
+left hand
+```
+-
+
+```
+Put the knife in the drawer by putting it ver-
+tically in a slot.
+```
+```
+put knife, drawer,
+slot
+```
+- put knife by putting it vertically in a slot -
+
+```
+Open the semolina flour bag by unrolling
+the top part of the plastic bag.
+```
+```
+open, un-
+roll
+```
+```
+semolina flour
+bag, top part of
+plastic bag
+```
+- open semolina
+    flour bag
+
+```
+by unrolling the top part of the
+plastic bag
+```
+-
+
+```
+Table A2. Parsing Examples
+```
+```
+Figure A5. All kitchens with their fixture annotations (coloured randomly).
+```
+Figure A6. Distribution of all audio-classes in HD-EPIC Sounds
+
+```
+the audio-visual stream of each sound annotation and asked
+to signify if the current label was correct. If the annotator
+deemed the current label incorrect, we asked for a proposed
+correction.
+We show the distribution of audio-classes in Fig. A6.
+```
+#### C.3. Digital Twin
+
+```
+Environments.Fig. A5 shows all kitchens used, along with
+their annotated fixtures.
+Moving objects in 2D.For annotating the object mov-
+ing segments, we used the VIA [22] interface as shown in
+```
+
+```
+Figure A7. The VIA interface used for annotations object move-
+ments in 2D.
+```
+```
+Figure A8. Interface for reviewing object/fixture assignments.
+```
+Fig. A7. In addition to the start and end timestamps of the
+object motion, we ask the annotators to provide bounding
+boxes around the object at the onset and end of the motion.
+Object/fixture review. Fig. A8 shows the interface for
+manually reviewing object/fixture assignments. Reviewers
+were asked to verify whether the 3D location and assigned
+fixture look correct. This process was repeated - after each
+iteration corrections to the Fixture annotations (e.g. includ-
+ing missing bins, hooksetc.) were made in Blender, as well
+as adding heuristics to the assignment process.
+
+Fixture transitions.Frequent transitions are cross-fixtures
+(i.e. excluding objects picked up and placed down on the
+same fixture), sink→counter and counter→cupboard. Fig.
+A9 shows common transitions and locations where the 20
+most common objects are placed on/in, normalised per ob-
+ject. Again, counters are the most used fixtures.
+
+Long Term Object Tracking.We link object movements
+over time to provide long term tracking for all objects,i.e.
+object itineraries. These capture sequences of an object’s
+
+```
+basket
+bin
+countercupboard
+dishwasher
+```
+```
+drawerfloorfreezerfridge
+fridgefreezer
+```
+```
+hobhook
+microwave
+```
+```
+ovenradiatorshelfsinkstoragetable
+```
+```
+washingmachine
+```
+```
+windowsill
+Fixtures (Moved to)
+```
+```
+basketbin
+dishwashercupboardcounter
+drawerfreezerfloor
+fridgefreezerfridgehob
+microwavehook
+radiatorovenshelf
+storagetablesink
+Fixtures (Moved from)washingmachinewindowsill
+```
+```
+100 101 102 103
+```
+```
+basket
+bin
+countercupboard
+dishwasher
+```
+```
+drawerfloorfreezerfridge
+fridgefreezer
+```
+```
+hobhook
+microwave
+```
+```
+ovenradiatorshelfsinkstoragetable
+```
+```
+washingmachine
+```
+```
+windowsill
+Fixtures assigned
+```
+```
+spoonbowl
+plateknife
+tea towelsponge
+chopping boardmugfork
+frying panspatula
+baking traysaucepanphone
+wooden spoonpan
+glasslid
+spice jarpot
+```
+```
+Moving objects
+```
+```
+100 101 102
+```
+```
+Figure A9. Left: Common source→destination object movements.
+Right: Common take/put locations of the top-20 moving objects.
+```
+```
+movement throughout the video. Fig. A10 shows the ob-
+ject associations interface used to connect objects through-
+out the video. It utilises our lifted 3D locations to speed up
+the annotation process. For each track, the annotation in-
+terface re-orders objects based on the comparison between
+the query track’s initial 3D location (pick up) and previous
+tracks’ final 3D location (put down). This approach was
+used in [56] for egocentric tracking, and we use it as an ini-
+tial step in our interface. Around 12% of the objects moved
+at least 5 times in the video making it suitable for long-term
+tracking. On average, an object moves 2.4 (±2.6) times in
+HD-EPIC.
+Hand and Object Segmentations To improve perfor-
+mance, we first manually annotate a small set of images
+from each video (5-10 frames) for both left and right
+hands. To cover the diverse locations and lighting condi-
+tions, we use the camera pose estimates to identify clusters
+of hotspots and select a set of images that represent hands in
+action at various locations. This is sent to dedicated annota-
+tors who manually segment these. We follow the same ap-
+proach in [19], where hands and arms are segmented jointly
+to avoid the ad hoc decision of the hand boundary. We use
+the TORAS [33] annotation tool for all our manual segmen-
+tation. We manually annotate 768 frames across 156 videos,
+which accounts for roughly 0 .02%of the total frames.
+For each video, we utilise SAM2 [64] to predict 2D hand
+masks for every frame. The manually annotated frames are
+placed in the conditional memory (roughly 5 frames per
+video) whilst the previous 6 predictions are used in the non-
+conditional memory in order to improve temporal consis-
+tency. We notice that SAM2, like most Video Object Seg-
+mentation (VOS) models, suffers from identifying the hand
+late when it enters the scene. In order to address this, we run
+the aforementioned process both forwards and backwards
+through the video.
+Correcting Noisy Hand Segmentations.We devise a sim-
+ple, non-learned procedure to automatically detect noisy
+masks based on the rate of change of the mask’s area over
+consecutive frames. A major change in size often indicates
+noise. If the previous frame has no mask and the current
+mask is large, then it is likely that a frame has missed a
+```
+
+```
+Figure A10.Object associations interface. For each query track, a set of possible object names extracted from the narrations is suggested,
+we provide these names as an additional annotations. Importantly, all previous tracks are sorted by their distance. It is trivial for the
+annotator to confirm that the track on the left, matches the box of chicken on the right, which has been positioned in exactly the same
+location (0.0m). By clicking ‘Add’, this track is corerctly associated connecting the object movement over time.
+```
+```
+mask or under-segmented. We flag frames for noise cor-
+rection. Additionally, if the previous mask is reasonable
+but the current mask is much larger or smaller, then this is
+another indication of errors. We use a dynamic threshold
+which catches when masks expand or contract too quickly
+based on the area of the previous mask.
+```
+Once we have flagged noisy frames, we sample from
+these frames for manual annotations. In order to propa-
+gate the new knowledge from the manual correction phase,
+we re-run the SAM2 procedure within a small window of
+frames around the original error, with the newly corrected
+frame in the memory (alongside the original 5 ground-truth
+images). The idea here is to correct frames around the orig-
+inal noise with the new manually annotated frame as a con-
+ditioning frame. In total, this correction procedure produces
+roughly 7.5k right hand masks and roughly 7k left hand
+masks for manual correction ( 0 .19%of total hand masks).
+As this is still a rather large amount of annotation to con-
+duct, we further reduce this by uniform temporal sampling,
+achieving an average of roughly 20 hand side masks per
+video to be corrected. In total, we manually clean and an-
+notate a further 5163 right hand masks and 4332 left hand
+masks ( 0 .12%of total hand masks).
+
+```
+Annotation Type Total annotations Annotations/min
+Narrations 59,454 24.0
+Parsing (Verbs + Nouns
++ Hands + How + Why) 303,968 122.7
+Recipes (Preps + Steps) 4,052 1.6
+Sound 50,968 20.6
+Action boundaries 59,454 24.0
+Object Motion (Pick up + Put down
++ Fixtures + Bboxes + Masks) 153,480 62.0
+Object Itinerary 4,881 2.0
+Object Priming (Starts + Ends) 18,264 7.4
+Total 263.2
+```
+```
+Table A3. HD-EPIC annotations per minute
+```
+#### C.4. Density of Our Annotations
+
+```
+On average, we have 263 annotations per minute of the
+dataset. Here in Tab. A3, we show the breakdown of this
+number. Note that this excludes the hand masks that we
+generate at 30 fps.
+```
+### D. Benchmark and Results
+
+```
+We first detail how each of the question prototypes in the
+VQA benchmark are formed in Sec. D.1. We then provide
+```
+
+additional experiments for the VQA demonstrating an ab-
+lation of the inputs and the prediction bias of models in
+Sec. D.2. Sec. D.3 gives additional details of the models
+used in the VQA benchmark. Finally, we provide additional
+details of the long-term VOS benchmark and recognition
+benchmark in Sec. D.4 and Sec. D.5.
+
+#### D.1. VQA Benchmark Details
+
+In this section, we detail how all question prototypes are
+formed and sampled.
+
+D.1.1 Recipes
+
+These questions test the ability to understand, retrieve, lo-
+calize, and recognize recipes and their steps.
+Recipe Recognition. To test a model’s ability to recog-
+nise entire recipes from long-term video, we formulated
+the question prototype “Which of these recipes were car-
+ried out by the participant?” As input, the model receives
+every video recorded by a given participant, concatenated
+chronologically. The positive answer is the name of one
+of the recipes prepared in these videos. To sample difficult
+negative answers, we generated recipe names similar to the
+positive recipe via ChatGPT [5], with the prompt “You are a
+professional chef. Your goal is to identify 4 similar recipes
+for each line of the text file. These recipes must technically
+be different dishes, they should not be different names for
+the same meal. The recipes can make use of the same in-
+gredients or new ones.” The results were manually edited
+to ensure validity, which allowed us to create more difficult
+negatives than were otherwise present in the dataset.
+Multi-Recipe Recognition. Extending this, the question
+prototype “Which of these recipes were carried out in this
+video?” tests a model’s ability to recognise every recipe
+occurring within a video. As input, the model now receives
+an entire video containing one or more recipes. The positive
+answer is the names of all recipes occurring in the video,
+with the negatives being generated in the same way as in
+Recipe Recognitionabove.
+Multi-Step Localisation. With the question prototype
+“In this video, when did the participant perform each of
+the following<recipe name>recipe steps: “<recipe
+step a>”, “<recipe step b>”, “<recipe step
+c>”?”, we then test a model’s ability to localise a subset of
+time segments of 3 steps of a recipe in a video. One video
+is supplied as input and in the question text we supply the
+text for 3 recipe steps selected in a random order. The pos-
+itive answer is a list of the largest segment start and end
+times for the 3 steps from a given recipe that occur within
+the video. To generate negative answers, we first collect
+all the time segments for recipe steps that don’t correspond
+to the recipe in the question text (if any exist). Then we
+concatenate these with all the time segments for recipe prep
+
+```
+occurring in the video. Finally, for each negative answer we
+randomly sample 3 segments.
+Step Localisation. Similarly, the question prototype
+“When did the participant perform step<recipe step>
+from recipe<recipe name>?” assesses a model’s abil-
+ity to localise all major segments corresponding to a recipe
+step. Again, the input is one video which must contain≥ 5
+unique recipe steps. The positive answer is the list of all
+annotated start and end times for a randomly chosen recipe
+step. In the question text, the name of the recipe and the
+recipe step text is provided. To form negative answers, we
+randomly sample other recipe steps from the same video
+and use the start and end times of the corresponding time
+segments.
+Prep Localisation. Likewise, the question prototype
+“When did the participant perform prep for<recipe
+step> from recipe<recipe name>?” assesses a
+model’s ability to localise all major segments correspond-
+ing to prep for a given recipe step. Again, the input is one
+video which must contain≥ 5 unique recipe steps. The pos-
+itive answer is the list of all annotated start and end times
+for the prep relating to a randomly chosen recipe step. In the
+question text, the name of the recipe and the recipe step text
+is provided. To form negative answers, we randomly sam-
+ple other recipe steps from the same video and use the start
+and end times of the corresponding prep time segments.
+Step Recognition. As recipes are comprised of many high-
+level steps, the question prototype “What step did the par-
+ticipant do between<TIME HH:SS:MM video 1>and
+<TIME HH:SS:MM video 1>in this video?” tests a
+model’s ability to recognise these long activities. One video
+is supplied as input, which must contain at least 5 unique
+recipe steps. The positive answer is randomly sampled from
+the steps occurring in the video. In the question text, the
+provided start time is the start of longest segment relating to
+the positive step and the end time is the end of the longest
+segment. To form negatives, we randomly sample recipe
+steps from the same video as the positive answer.
+Rough Step Localisation. Where the prior question pro-
+totypes consider the localisation of all segments of a recipe
+step/prep, “Which of these time segments belongs to the
+<recipe name>recipe step<recipe step>in this
+video?” tests whether a model can localise recipe steps from
+a subset of the possible time segments. Again, the input is
+one video with≥ 5 unique recipe steps. Here, the positive
+answer is the start and end time of the longest time segment
+relating to the recipe step. The negative answers are formed
+by randomly sampling recipe steps from the same video and
+using their corresponding start and end times of the longest
+segment.
+Following Activity Recognition. Finally, we test a
+model’s ability to recognise high-level activities that follow
+recipe steps with the question prototype “Which high-level
+```
+
+```
+activity did the participant do while completing recipe step
+<recipe step>in this video?” As input, the model re-
+ceives one video and the recipe step text in the question.
+The positive answer is determined by finding the high-level
+activity that occurs while the given recipe step is conclud-
+ing. Negative answers are sampled from other activities oc-
+curring in the video that do not overlap with the end time of
+the given step.
+All of these question prototypes were sampled uniformly
+at random from the space of possible positive answers.
+However, as some simpler recipes occur more frequently
+than others, these were excluded from the recipe recogni-
+tion and step localisation tasks.
+```
+```
+D.1.2 Ingredients
+```
+The ingredient questions assess a model’s ability to under-
+stand and identify the ingredients used, their exact amounts
+and in what order they are added.
+Ingredient Retrieval. We test a model’s ability to
+recognise added ingredients, with the question prototype
+“Between<TIME HH:SS:MM video 1>and<TIME
+HH:SS:MM video 1>, which of these ingredients were
+added to the dish being prepared?” One video is used as
+input, with the start and end time of an ingredient-adding
+segment supplied in the question text. Instead of using the
+exact annotated times, we pad the start and end times by
+adding 5 seconds to either side of the segment. If the new
+times overlap with the adding of a new ingredient, we in-
+stead add the smallest possible time that avoids the intro-
+duction of a new ingredient to the segment. The positive an-
+swer is randomly selected from the ingredients added in the
+video. We generate negatives by randomly selecting from
+ingredients that are added in the video and do not overlap
+with the positive answer.
+Ingredient Weight. This question tests the ability to iden-
+tify ingredient weight with the prototype “How much did
+the participant weigh of<ingredient>in this video?”.
+The input is a video segment annotated as the weighing se-
+quence for a given ingredient and the positive is the correct
+weight of this ingredient. It should be noted that humans
+can trivially perform this task by reading the scale while
+current models struggle. The negatives are generated by
+sampling a random multiplier between (0.5, 5) for the posi-
+tive answer.
+Ingredient Order. This question tests the ability to iden-
+tify the order in which ingredients are added with the pro-
+totype “What is the order of ingredients added to the dish
+in this video?”. The input is a video segment where at least
+three ingredients were added to the dish and the positive an-
+swer is the list of the added ingredients in the correct order.
+For recipes with more than five ingredients, a subset of five
+consecutive ingredients was sampled randomly. The nega-
+
+```
+tives are random permutations of the positive order.
+Ingredient Adding Localisation. We assess the abil-
+ity to temporally localise when ingredients are added with
+“When was ingredient<ingredient>added to recipe
+<recipe name>?”. The input is an untrimmed video
+and positive is the start and end time of the annotated adding
+segment. Negative answers are the start and end time of
+actionsegments from the input video where the narration
+mentions the ingredient. Action segments overlapping with
+the adding time segment are discarded. If less than 4 ac-
+tion segments include the ingredient, we use action seg-
+ments containing similar ingredients. Similarity is calcu-
+lated using cosine distance> 0. 5 of spaCy [30] (model
+encoreweblg) word embeddings.
+Ingredient RecognitionThis tests the ability to identify the
+ingredients used with “Which of these ingredients is used
+in<recipe name>?”. The input is all videos of one
+participant, with one of the completed recipes selected as
+<recipe name>. Only recipes with at least four ingre-
+dients were considered. The positive answer is obtained by
+randomly sampling a single ingredient from the ingredients
+used. The negatives were generated using an LLM which
+is asked to provide potential ingredients for a given recipe
+that do not include the ingredients used in the dish. This
+was done to ensure more challenging negatives than those
+sampled from other recipes in the dataset. We also created a
+negative version of this question: “Which of these ingredi-
+ents is not used in<recipe name>?” was also created.
+Here, the input video selection is the same and positive and
+negative selection strategies are swapped.
+Exact Ingredient RecognitionThis question tests the abil-
+ity of a model to identify the exact quantity of an ingredi-
+ent with “What was the exact quantity of<ingredient>
+used in<recipe name>?”. For this question, the input
+is all videos relating to a randomly selected recipe. The
+positive answer is randomly selected from the used ingre-
+dients while excluding ingredients used in theIngredient
+Weightquestion. The negatives are generated by sampling
+a random multiplier between (0.5, 5) applied to the positive
+answer.
+To select final questions for our benchmark we uniformly
+sample over participants.
+```
+```
+D.1.3 Nutrition
+```
+```
+The nutrition questions assess a model’s ability to under-
+stand the nutritional values of ingredients used in the videos.
+Image Nutrition Estimation. Our first question
+is “Which of the ingredients in these images showcase
+higher<nutrition>?”, where<nutrition>is one
+of “calories”, “fat”, “carbs” or “protein”. The input is 5
+video frames showing different ingredients. To obtain these
+we manually label a frame clearly showing the ingredient.
+```
+
+We search this frame within the ingredient-adding sequence
+as this allows a clear view of the correct quantity of the in-
+gredient. In total we annotate 200 frames/ingredients, from
+which we generate 834 questions. The positive is a ran-
+domly selected ingredient. To sample the 4 negatives and
+their corresponding frame, we first calculate the value-to-
+amount ratio of each ingredient,e.g. if we have 30g of pro-
+tein in a 100g ingredient, the ratio is 0.3. For a nutritional
+value we form negatives by finding ingredients that have
+ahighervalue-to-amount ratio but alowernutritional value
+compared to the positive answer. This strategy samples hard
+negatives that are not answerable by text alone. To ensure
+a reasonable separation between positive and negative an-
+swers, the difference in nutritional value is at least 20% of
+the positive answer’s value.
+Nutrition Change. We use “From<TIME HH:SS:MM
+video 1> to <TIME HH:SS:MM video 1>, what
+changed in the nutrition values of the dish with recipe
+<recipe name>?”. The input is a video containing
+a recipe (<recipe name>) and one or more adding
+segments. <TIME HH:SS:MM video 1>placehold-
+ers are replaced with the annotated start-end times of an
+ingredient-adding segment. Answers are in the format
+“calories changed by<a>, fat changed by<b>, carbs
+changed by<c>, protein changed by<d>”. For the pos-
+itive<a/b/c/d>are replaced with the correct ingredient
+nutritional values. For the negatives, the placeholders are
+multiples of the correct nutritional value. The random mul-
+tiplier is sampled within( 0. 10 , 0. 75 )or( 1. 25 , 1. 75 ).
+Video Nutrition Estimation. Finally, we also use
+the prototype “What is the ingredient with the highest
+<nutrition>in this recipe?”, where<nutrition>
+is the same as above. For this question, the input is
+an untrimmed video containing one recipe. The pos-
+itive answer is the ingredient with the highest calo-
+ries/fat/carbs/protein in the recipe. Negative answers are
+sampled from ingredients that have a value-to-amount ra-
+tio similar to the positive. At least 2 negative answers in-
+gredients come from the same recipe, while the rest can be
+sampled from other recipes when it is not possible to obtain
+enough negative answers from a single recipe.
+Final benchmark questions are randomly sampled from
+the set of possible questions uniformly across all partici-
+pants to ensure diversity.
+
+D.1.4 Fine-Grained Action
+
+With these questions, we assess a model’s ability to under-
+stand detailed fine-grained actions as described by the par-
+ticipants in our ground-truth narrations.
+Action Recognition. We first formulate the question pro-
+totype “Which of these sentences best describe the ongoing
+action(s) in the video 1?”. The input is a short video clip
+
+```
+containing 1-3 actions. Positives contain the correct 1-3
+action descriptions obtained from the narration transcrip-
+tions. We sample negatives by selecting other sequences of
+the same number of actions from other video clips in the
+dataset. We ensure difficult narrations by requiring nega-
+tives to have at least one verb and noun in common with the
+positive and prioritise those with more common verbs and
+nouns.
+How Recognition. To assess the model’s ability to under-
+stand how fine-grained actions are performed, we use the
+prototype “What is the best description for how the person
+carried out the action<verb noun>in this video seg-
+ment?”. We randomly sample a narration annotated with
+start and end times. The input is a video clip of this ac-
+tion as given by the start-end time annotations and<verb
+noun>in the question is the main action extracted from
+the narration by our parsing. The positive answer is the
+manner of the target action as provided by the ground-truth
+narration also extracted by the parsing. To sample negative
+answers, we first identify other narrations that share both
+the same verb and noun cluster (see Sec. B.3) with the main
+action of the target narration. We then extract ‘how’ from
+these narrations using our parsing. To avoid false positives,
+we filter out any ‘how’ with verb and noun clusters which
+are subsets or supersets of the positive answer and manually
+filter the remaining questions.
+Why Recognition. To assess the model’s ability to un-
+derstand why fine-grained actions are performed, we use
+“What is the best description for why the person performed
+the action<verb noun>in video 1?”. The input is a
+video clip for a randomly sampled narration and<verb
+noun>is the main action parsed from the narration. The
+positive answer contains the reason for performing the tar-
+get action as extracted from the narration by our parsing. To
+sample negatives, we use ‘whys’ extracted from other nar-
+rations with the same main action for at least 2 negatives.
+When there are not enough of these negatives we add whys
+from actions that share the same verb. To avoid false pos-
+itives, we remove any negative ‘why’ with verb and noun
+clusters which are subsets or supersets of the positive an-
+swer and manually filter the remaining questions.
+Action Localisation. To assess ability to localize fine-
+grained actions, we created the question prototype “When
+did the action<verb noun>happen in the video 1 ?”.
+The input is a 30 second to 15 minute video clip. Answers
+are in time period format (e.g.,<TIME HH:MM:SS.MS>
+to<TIME HH:MM:SS.MS>). The positive answer corre-
+sponds to the time period when a randomly sampled target
+action occurs, while the negative answers are time periods
+when different actions occur. To make the questions chal-
+lenging, at least two of the negative timestamps are from
+actions that share the same noun as the target action but dif-
+fer in the verb. To ensure 4 negatives we add timestamps for
+```
+
+```
+actions that share the same verb but have a different noun,
+or those that share either noun or verb cluster.
+```
+```
+D.1.5 3D Perception
+```
+The 3D perception questions assess the model’s capability
+to understand 3D environment or 3D movements from only
+video.
+Fixture Location. These questions test the ability to
+understand a fixture’s relative location in 3D. We use
+the fixture mesh annotations for each kitchen to gener-
+ate questions of type “Given the direction I am looking at
+<TIME HH:MM:SS video 1>, where is the<query
+fixture>located?” We select the<query fixture>
+as one of the unique fixtures in the kitchene.g. fridge, hob,
+sink, microwave. For the positive answer, we calculate the
+angle between the direction where the camera is pointed and
+the direction of the<query fixture>from the camera
+location. We represent this angle as position of the hour
+hand on the clocke.g. 2 o’clock, 7 o’clock. For the nega-
+tives, we randomly sample from other possible positions of
+the hour hand on the clock. We don’t choose negatives with
+an absolute≤ 1 o’clock difference to the positive, in case
+it might lead to confusion,e.g. if the positive is 2 ’o clock,
+then the negatives can be sampled from 4 ’o clock to 12 ’o
+clock. For the timestamp in the question, we ignore frames
+that have a tilt greater than 45 ◦in the camera because it
+would lead to incorrect calculation of the positive.
+Object Location. Here we test the model’s ability to un-
+derstand object location as objects move with the prototype
+“Where did I take/put the object identified by<BBOX Y1
+X1 Y2 X2> at <TIME HH:MM:SS video 1>from
+before/after putting/taking it at <TIME HH:MM:SS>?”
+The bounding box and timestamp in the question is di-
+rectly taken from the annotations of moving objects in 2D
+(Sec. C.3). If the question asks where the object is put
+down, the bounding box and timestamp are when the ob-
+ject is picked up before that. If the question asks where the
+object is taken from, the box and timestamp are from when
+the object is put down after that. For the positives, we use
+the name of the correct fixture associated with the object
+bounding boxes at the time of pick up/put down. For the
+negatives, we sample different fixtures that other moving
+objects have been associated with in the video. We use rel-
+ative location to another unique fixturee.g. sink to identify
+fixtures without a unique namee.g. the cupboard top left of
+the sink.
+Object Contents Retrieval.Here we test the model’s abil-
+ity to understand 3D locations of fixtures as well as recog-
+nise objects that were put/taken from the fixture. We use
+the fixture meshes to generate questions of type “Which of
+these objects did the person take/put from/in/on the item
+indicated by bounding box<BBOX Y1 X1 Y2 X2>in
+
+```
+<TIME HH:MM:SS video 1>?” We randomly sample
+a fixture in the kitchen and project the 3D vertices of its
+mesh onto the image plane. We use the maximum and
+minimum of the projected vertices to find the 2D bounding
+box. We repeat this for all frames in the video and search
+for frames where the sampled fixture is occluded less than
+30% and the projected bounding box lies fully within the
+image. We then choose one of the identified frames and
+the corresponding bounding box for the question. We use
+the long-term object track and fixture transition annotations
+Appendix C.3 to identify objects that were either taken from
+or put on/in the fixture in question. We treat these objects
+as positive objects and sample few of them as our positive
+answer. For negatives, we sample objects that were taken
+from or put on the same fixture in different videos but do
+not overlap with the positives. We also sample objects that
+were assigned to other fixtures as negatives.
+Fixture Interaction Counting.Here we assess the model’s
+ability to remember the interactions between participants
+and fixtures with the question “How many times did I
+open/close the item indicated by bounding box<BBOX Y1
+X1 Y2 X2>at<TIME HH:MM:SS video 1>?” The
+timestamp and bounding box for the query fixture is ob-
+tained following the same procedure as forObject Re-
+trievalquestions. For the positive, we use the correct num-
+ber of times the fixture was opened or closed. We obtain
+this by first using the parsed narrations to identify phrases
+relevant to fixture interactions,i.e. where the verb includes
+‘open’ or ‘close’ and the noun includes one of the fixtures.
+For relevant narrations, we use a 1s temporal window before
+the corresponding narration timestamp to find the fixture
+with the highest cumulative gaze intersection. This iden-
+tifies the exact fixture that is being interacted with at that
+time. The negatives are sampled randomly from± 4 of the
+positive.
+```
+```
+D.1.6 Object Motion
+```
+```
+Here, we test the model’s ability to correctly reason over
+various moving objects given a full video as input. We use
+the long-term object tracking annotations mentioned in Sec.
+C.3 for questions in this category.
+Object Movement Itinerary. We design the question
+as “Where was the object<BBOX X1 Y1 X2 Y2>seen
+at time<TIME HH:MM:SS video 1>moved from/to
+throughout the video?”. We provide bounding boxes around
+the object instead of giving the object name as text. As pos-
+itives, we selected the correct order of the fixture names
+involved as either source or destination in all trajectories of
+the highlighted object in the query videoe.g. “from fridge to
+sink, then from sink to microwave”. As negatives, we select
+the fixtures associated with the itineraries of other objects
+that are moving in the video. For fixtures that do not have
+```
+
+```
+a unique namee.g. cupboards, we follow the same proce-
+dure asObject Locationand generate descriptions of the
+relative position.
+```
+Object Movement Counting.We begin by testing the abil-
+ity to count how many times an object moves with the pro-
+totype “How many times did the object<BBOX Y1 X1
+Y2 X2>seen at<TIME HH:MM:SS video 1>change
+locations in the video?” The input is the full video, and
+the object is specified by its bounding box at a particu-
+lar timestamp from the moving objects in 2D annotations
+(Sec. C.3). Positive answers are derived by counting dis-
+tinct movements using the long-term object tracking anno-
+tations in Sec. C.3. To mitigate rapid movements and er-
+roneous annotations, we retain only objects satisfying two
+criteria: (1) consecutive tracks must be separated by at least
+1.1 seconds, and (2) the spatial displacement between the
+end of one track and the start of the next must not exceed
+20 cm. For negative answers, we randomly sample values
+around the positive answer. To avoid text-based shortcuts,
+the sampling window is varied randomly from [1,8], and
+the maximum negative value is restricted to 8. We addition-
+ally enforce that the negative values for cases having more
+than 2 movements should be at least± 2 value apart from
+the ground truth answer.
+
+Stationary Object Localization.Here, we evaluate the ca-
+pability to perform the reverse task: determining when an
+object remains static in the video. The question is: ”Af-
+ter the object<BBOX Y1 X1 Y2 X2>seen at<TIME
+HH:MM:SS video 1>is first moved, from which of the
+following starting times does the object remain static for
+more than<X>seconds?”. Similar to the previous task, the
+input is the entire video, and the object is specified by its
+bounding box at a given timestamp. The static duration
+is determined using long-term object tracking annotations
+(Sec. C.3). We findt 1 andt 2 , the two longest static dura-
+tions of an object. A value is then randomly sampled from
+the range(t 2 + 5 ,t 1 )to fill the placeholder<X>, which
+specifies the required static duration for the question. We
+also use the criteria mentioned in the previous question to
+filter objects with rapid movements and spatial inconsis-
+tency across tasks. For the positive answer, a timestamp
+is randomly selected from the interval starting at the begin-
+ning of the maximum static duration and ending at a point
+determined by subtracting the previously chosen static du-
+ration from its endpoint. Negative answers are randomly
+sampled from the video from the start of the video to the
+last movement of the object, ensuring no overlap with the
+positive. All answers are provided as timestamps formatted
+as<TIME HH:MM:SS video 1>.
+
+```
+Input RecipeIngredientNutritionAction3DMotionGaze Avg.
+Llama 3.2
+A only 26.8 23.8 14.0 20.2 14.9 15.4 17.8 19.0
+Q + A 33.5 25.0 36.7 23.3 22.3 25.3 19.5 26.5
+GT Narrations + Q + A 70.8 46.3 34.0 62.5 42.9 28.7 29.4 45.0
+Gemini Pro
+A only 29.6 21.0 17.7 19.2 18.9 16.3 18.0 20.1
+Q + A 38.0 26.8 30.0 22.1 21.5 27.7 20.5 26.7
+GT Actions + Q + A 79.0 54.8 36.3 31.3 42.5 32.8 25.5 43.2
+GT Narrations + Q + A 82.6 57.5 36.7 63.6 47.6 38.5 29.0 50.8
+Video + Q + A 60.5 46.2 34.7 39.6 32.5 20.8 28.7 38.5
+```
+```
+Table A4.VQA Input AblationOur benchmark cannot be solved
+by analysing Q+A pairs or external knowledge and is a challenge
+for state-of-the-art closed and open source video VLM models.
+```
+```
+D.1.7 Gaze
+```
+```
+The Gaze questions evaluate the model’s ability to under-
+stand the subject of the camera wearer’s visual attention,
+which can also be a signifier for future interactions.
+Gaze Estimation. We assess the model’s capabilities to
+understand where the camera wearer is fixating their gaze
+within a given video clip. We formulate this question as
+“What is the person looking at in this video segment?”. The
+input is a trimmed video clip where the camera wearer fix-
+ates on some large object,i.e. a landmark, for at least 0.5
+seconds. Positives are the name of the landmark being fix-
+ated on, negatives were randomly sampled from all other
+landmarks visible in the video segment. To determine if a
+landmark is visible, we consider all 8 vertices of the 3D
+bounding box, as well as the centre of the object. An object
+is considered visible if, in any frame, 5 of the 9 points pass
+three checks: 1) the point projects onto the camera plane, 2)
+the point is in front of the camera and 3) the ray from the
+point to the camera centre does not intersect with another
+landmark’s bounding boxi.e. it is not occluded. Common
+objects are given unique names according to relative posi-
+tions similar toObject Location. Overall, there are 1220
+possible questions, of which we randomly sample 1000.
+Interaction Anticipation.We also evaluate how effectively
+a model can anticipate the next object to be interacted with.
+We format the question as “What object will the person in-
+teract with next, ignoring ongoing interactions?” and pro-
+vide a 10 second video segment, concluding 0.3 seconds
+after an object is primed for pick-up using eye gaze. For
+these questions, the positive answer is the object which has
+just been primed, whilst the negatives are randomly sam-
+pled from all other objects that have been moved within the
+2 minute video segment. We generate 1110 total questions
+and randomly select 1000.
+```
+#### D.2. Additional VQA Experiments
+
+```
+VQA Input Ablation. To explore how much information
+is contained in different inputs (video, ground-truth narra-
+tions, questions and answers) we ablate them in Tab. A4.
+```
+
+```
+Figure A11.Prediction Bias of Models. Most models have a bias in answer, although it is different for each model.
+```
+For both Llama and Gemini, providing only the possible
+answers gives random performance. Recipe and ingredient
+prototypes are the exception, likely due to textual recipes
+within the training data. Giving the question improves
+performance slightly as question contain contextual infor-
+mation,e.g. Why Recognition provides the action corre-
+sponding to the possible reasons why.
+Making predictions from the full ground-truth (GT) nar-
+rations is better than using GT action clusters for all cat-
+egories demonstrating the benefit of more detailed short-
+term understanding. Using GT narrations instead of visual
+input gives better performance for all question categories,
+highlighting the challenge of visual understanding in HD-
+EPIC. Having GT narrations helps most with recipe and
+fine-grained action and object motion questions but far from
+solves these categoriese.g. fine-grained action is 63.6%.
+Regardless, nutrition, 3D perception, object motion, and
+gaze still have low performance with GT narrations demon-
+strating their difficulty.
+Prediction Bias of Models. Fig. A11 shows the distribu-
+tion of output predictions for the 5 models tested. All mod-
+els were able constrain their answers to the 5 options in al-
+most all cases. Some models have clear significant bias (e.g.
+Llama 3.2 for option B and LongVA for option A).
+Per Prototype ResultsIn Table A6 we show the numerical
+values for the per-prototype results shown in Fig. 11.
+
+#### D.3. VQA Model Details
+
+Gemini Pro [75].Version “gemini-1.5-pro-001” was used
+as it is the latest version which supports context caching -
+necessary for asking repeated questions about long videos
+to keep costs tractable. Gemini processes all videos at 1fps
+regardless of length, so we passed all videos at 768 x 768
+at their default speed up to 6000s long, after which we re-
+encoded the videos at a higher speed to fit in the model’s
+2M context window. In these cases we scaled all times-
+tamps in questions to match this new speed to maintain the
+1fps/time dependency noted in the documentation. The fol-
+
+```
+lowing prompt was used:
+You are an expert video analyzer, and your job is to an-
+swer the multiple choice question by giving only the letter
+identifying the answer. Do not give any other information.
+For example, acceptable answers are ‘A’ or ‘B’ or ‘C’ etc.
+You must give an answer, even if you are not sure. Bounding
+boxes are in the format (ymin, xmin, ymax, xmax) relative
+to an image size of 1000x1000.
+0.2% of questions were blocked/refused by the API due
+to safety reasons. These were counted as failure cases.
+Llama.We used version “Llama-3.2-90B-Vision-Instruct”
+due to it being the largest and most up-to-date model we
+could run inference on. The model could run a majority of
+the questions, though occasionally when including the nar-
+rations, we had to evenly sample the input to be a maximum
+of 120K input tokens. The system prompt matched Gemini
+Pro.
+LongVA [89].Version “LongVA-7B-DPO” was used. We
+used the default resolution of 384x284. Videos were pro-
+cessed at 8fps up to a maximum context window of 400
+frames (as large as would fit in VRAM with the model). Af-
+ter this, frames were uniformly sampled. The same prompt
+was used as for Gemini Pro.
+VideoLLaMA 2 [13]. Version “VideoLLaMA2-7B-16F”
+was used. Videos were processed at 336x336 resolution
+with timestamps scaled similarly to Gemini Pro, and with
+the maximum supported context window of 16 frames. The
+same prompt was used as for Gemini Pro. In the case of
+multi-video input, if input exceeded the frame limit and one
+or more videos were not used, the prompt included:Ninput
+videos have been concatenated together and the remaining
+videos have been truncated due to input length limit.
+LLaVA-Video [90]. Version “LLaVA-Video-7B-Qwen2”
+was used. Videos were processed the same as LongVA, but
+with the maximum number frames set to 128.
+Sample Human Baseline. We also provide a sample hu-
+man baseline to further assess the gap in understanding be-
+tween humans and SOTA video-language models. For this
+```
+
+```
+Dataset Sequences DurationAvg. DurationTotal Objs/Seq AnnotatedFrames
+DAVIS [57] 30 2.8s 83.3s 2.0 1,999
+YouTube-VOS [84] 507 21.9s 11,097.0s 2.1 13,710
+Ours 1000 561.0s 561,034.1s 6.3 20,548
+```
+Table A5. Our HD-EPIC long term VOS benchmark compared to
+the validation sets of DAVIS and YouTubeVOS, where duration is
+measured in seconds and calculated using the first and last frame
+indices of the annotated frames.
+
+we sampled 20 questions per question prototype, 600 ques-
+tions in total, split between 3 participants.
+
+#### D.4. Long-Term VOS Benchmark
+
+The details of our long-term VOS benchmark are com-
+pared against the validation sets of two popular VOS bench-
+marks, DAVIS 2017 [57] and YouTube-VOS 2019 [84]. Our
+benchmark includes 1000 sequences, with an average dura-
+tion of 561.0 seconds. This is calculated using the first and
+last frame indices of the annotated frames. When calculat-
+ing durations for the DAVIS and YouTube-VOS we assume
+FPS values of 24 and 6, respectively, as stated in the origi-
+nal papers [53, 83]. It is clear that our benchmark provides
+a much longer temporal duration for video object segmen-
+tation evaluation. Furthermore, the table shows that the av-
+erage number of objects in each sequence is nearly tripled
+compared to the prior benchmarks.
+We evaluate three models on our long-term VOS bench-
+mark (Static, SAM2 [64] and Cutie [12]) and describe the
+results in the table of Fig. 14. For SAM2 and Cutie, we
+insert each object’s first appearance frame into the work-
+ing memory of the model and use the remaining frames as
+evaluation frames. For the method labelled Static, we copy
+the mask from the first appearance to all evaluation frames,
+to act as a naive baseline. Following [53], we use jaccard
+indexJ, contour accuracyFand their averageJ&F.
+Due to the large number of frames in our dataset, we only
+pass the memory and evaluation frames into the model. We
+acknowledge that this is limited and the results could be
+improved further by sampling more frames.
+
+#### D.5. Recognition Benchmarks
+
+Both action and sound recognition remain fundamental
+downstream tasks for video models. We thus evaluate
+strong video models for both tasks in this section. their
+performance in the following. Note that for all works we
+follow the data (frames/audio) preprocessing as described
+in the original papers.
+Action Recognition.We assess 5 action recognition meth-
+ods [9, 24, 26, 51, 76], using publicly available weights fine-
+tuned on EPIC-KITCHENS-100. We detail the models and
+For VideoMAE-L, we used the finetuned model from [9].
+As customary, we perform test augmentations over 10 clips
+
+```
+during inference. The exception of this is TIM which also
+includes the audio modality, and averages the predictions
+are averaged across all context windows in which the ac-
+tion appears. We also include a chance baseline, where we
+randomly shuffle the ground-truth labels and compute the
+accuracy, giving a lower-bound for the action recognition
+challenge.
+```
+
+Recipe Recognition
+
+Multi-Recipe Recognition
+
+Multi-Step Localisation
+
+Step Localisation
+
+Prep Localisation
+
+Step Recognition
+
+Rough Step Localisation
+
+Following Activity Recognition
+
+Ingredient Retrieval
+
+Ingredient Weight
+
+Ingredients Order
+
+Ingredient Adding Localisation
+
+Ingredient Recognition
+
+Exact Ingredient Recognition
+
+Image Nutrition Estimation
+
+Nutrition Change
+
+Video Nutrition Estimation
+
+Action Recognition
+
+How Recognition
+
+Why Recognition
+
+Action Localisation
+
+Fixture Location
+
+Object Location
+
+Object Contents Retrieval
+
+Fixture Interaction Counting
+
+Object Movement Itinerary
+
+Object Movement Counting
+
+Stationary Object Localisation
+
+Gaze Estimation
+
+Interaction Anticipation
+
+```
+Blind - Language OnlyLlama 3.2
+```
+```

@@ -1,0 +1,8 @@
+family,question_count,language_only_count,bbox_signal_count,numeric_signal_count,temporal_signal_count,spatial_signal_count,duration_known_count,duration_mean_sec,duration_median_sec,duration_min_sec,duration_max_sec,top_profiles,numeric_in_question_count,numeric_in_choices_count,bbox_in_question_count,bbox_in_choices_count
+3d_perception,1500,0,1000,1500,1500,1028,0,,,,,mixed:bbox+numeric+spatial+temporal:528; mixed:numeric+spatial+temporal:500; mixed:bbox+numeric+temporal:472,1500,1494,1000,0
+fine_grained,21000,0,0,21000,21000,11024,21000,161.75796852380952,12.8945,0.199,901.99,mixed:numeric+spatial+temporal:11024; mixed:numeric+temporal:9976,20773,20990,0,0
+gaze,2000,0,0,2000,2000,1078,2000,6.2606415,10.0,0.5,66.767,mixed:numeric+spatial+temporal:1078; mixed:numeric+temporal:922,2000,1957,0,0
+ingredient,400,6,0,394,250,100,50,35.8437,20.0325,11.024,235.531,mixed:numeric+temporal:150; numeric:144; mixed:numeric+spatial+temporal:100; language_only:6,301,393,0,0
+nutrition,200,0,0,200,50,0,50,7.64818,6.5115,1.03,27.06,numeric:150; mixed:numeric+temporal:50,91,193,0,0
+object_motion,900,0,900,900,900,700,0,,,,,mixed:bbox+numeric+spatial+temporal:700; mixed:bbox+numeric+temporal:200,900,896,900,0
+recipe,550,3,0,547,403,174,0,,,,,mixed:numeric+temporal:247; mixed:numeric+spatial+temporal:156; numeric:126; mixed:numeric+spatial:18; language_only:3,445,546,0,0

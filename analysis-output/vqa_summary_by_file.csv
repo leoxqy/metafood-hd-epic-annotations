@@ -1,0 +1,31 @@
+source_file,question_count,language_only_count,bbox_signal_count,numeric_signal_count,temporal_signal_count,spatial_signal_count,duration_known_count,duration_mean_sec,duration_median_sec,duration_min_sec,duration_max_sec,top_profiles,numeric_in_question_count,numeric_in_choices_count,bbox_in_question_count,bbox_in_choices_count
+3d_perception_fixture_interaction_counting.json,300,0,300,300,300,0,0,,,,,mixed:bbox+numeric+temporal:300,300,300,300,0
+3d_perception_fixture_location.json,500,0,0,500,500,500,0,,,,,mixed:numeric+spatial+temporal:500,500,500,0,0
+3d_perception_object_contents_retrieval.json,200,0,200,200,200,28,0,,,,,mixed:bbox+numeric+temporal:172; mixed:bbox+numeric+spatial+temporal:28,200,200,200,0
+3d_perception_object_location.json,500,0,500,500,500,500,0,,,,,mixed:bbox+numeric+spatial+temporal:500,500,494,500,0
+fine_grained_action_localization.json,10000,0,0,10000,10000,342,10000,335.1984719,317.087,31.505,901.99,mixed:numeric+temporal:9658; mixed:numeric+spatial+temporal:342,10000,10000,0,0
+fine_grained_action_recognition.json,10000,0,0,10000,10000,9859,10000,4.2458527,2.6805000000000003,0.199,218.509,mixed:numeric+spatial+temporal:9859; mixed:numeric+temporal:141,10000,9993,0,0
+fine_grained_how_recognition.json,500,0,0,500,500,476,500,2.609648,1.4805000000000001,0.22,25.809,mixed:numeric+spatial+temporal:476; mixed:numeric+temporal:24,273,500,0,0
+fine_grained_why_recognition.json,500,0,0,500,500,347,500,2.338538,1.25,0.211,46.799,mixed:numeric+spatial+temporal:347; mixed:numeric+temporal:153,500,497,0,0
+gaze_gaze_estimation.json,1000,0,0,1000,1000,1000,1000,2.521283,1.167,0.5,66.767,mixed:numeric+spatial+temporal:1000,1000,998,0,0
+gaze_interaction_anticipation.json,1000,0,0,1000,1000,78,1000,10.0,10.0,10.0,10.0,mixed:numeric+temporal:922; mixed:numeric+spatial+temporal:78,1000,959,0,0
+ingredient_exact_ingredient_recognition.json,50,0,0,50,0,0,0,,,,,numeric:50,50,50,0,0
+ingredient_ingredient_adding_localization.json,100,0,0,100,100,0,0,,,,,mixed:numeric+temporal:100,73,100,0,0
+ingredient_ingredient_recognition.json,50,2,0,48,0,0,0,,,,,numeric:48; language_only:2,28,48,0,0
+ingredient_ingredient_retrieval.json,100,0,0,100,100,100,0,,,,,mixed:numeric+spatial+temporal:100,100,99,0,0
+ingredient_ingredient_weight.json,50,0,0,50,50,0,50,35.8437,20.0325,11.024,235.531,mixed:numeric+temporal:50,50,50,0,0
+ingredient_ingredients_order.json,50,4,0,46,0,0,0,,,,,numeric:46; language_only:4,0,46,0,0
+nutrition_image_nutrition_estimation.json,100,0,0,100,0,0,0,,,,,numeric:100,27,95,0,0
+nutrition_nutrition_change.json,50,0,0,50,50,0,50,7.64818,6.5115,1.03,27.06,mixed:numeric+temporal:50,50,50,0,0
+nutrition_video_nutrition_estimation.json,50,0,0,50,0,0,0,,,,,numeric:50,14,48,0,0
+object_motion_object_movement_counting.json,200,0,200,200,200,200,0,,,,,mixed:bbox+numeric+spatial+temporal:200,200,200,200,0
+object_motion_object_movement_itinerary.json,500,0,500,500,500,500,0,,,,,mixed:bbox+numeric+spatial+temporal:500,500,496,500,0
+object_motion_stationary_object_localization.json,200,0,200,200,200,0,0,,,,,mixed:bbox+numeric+temporal:200,200,200,200,0
+recipe_following_activity_recognition.json,50,0,0,50,3,18,0,,,,,numeric:31; mixed:numeric+spatial:16; mixed:numeric+spatial+temporal:2; mixed:numeric+temporal:1,50,49,0,0
+recipe_multi_recipe_recognition.json,50,0,0,50,0,0,0,,,,,numeric:50,0,50,0,0
+recipe_multi_step_localization.json,50,0,0,50,50,20,0,,,,,mixed:numeric+temporal:30; mixed:numeric+spatial+temporal:20,50,50,0,0
+recipe_prep_localization.json,100,0,0,100,100,12,0,,,,,mixed:numeric+temporal:88; mixed:numeric+spatial+temporal:12,97,100,0,0
+recipe_recipe_recognition.json,50,3,0,47,0,2,0,,,,,numeric:45; language_only:3; mixed:numeric+spatial:2,0,47,0,0
+recipe_rough_step_localization.json,100,0,0,100,100,17,0,,,,,mixed:numeric+temporal:83; mixed:numeric+spatial+temporal:17,100,100,0,0
+recipe_step_localization.json,50,0,0,50,50,5,0,,,,,mixed:numeric+temporal:45; mixed:numeric+spatial+temporal:5,48,50,0,0
+recipe_step_recognition.json,100,0,0,100,100,100,0,,,,,mixed:numeric+spatial+temporal:100,100,100,0,0

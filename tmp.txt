@@ -1,0 +1,7 @@
+> Nutrition Change: Only 50 questions in the benchmark ask "From [Time A] to [Time B], what changed in the nutrition values of the dish?".
+
+Image Nutrition Estimation: 834 questions generated from 200 frames asking which ingredient has higher carbs/fat/protein.
+
+Video Nutrition Estimation: 50 questions asking for the ingredient with the highest specific nutritional value in a recipe.
+
+- How do we use them all, especially, there are image nutrition estimation with ground truth. because these images can also be parsed into SigLip, and we will have same len token, can we use them somehow to increase our model's understanding to general food nutrition estimation somehow? 
