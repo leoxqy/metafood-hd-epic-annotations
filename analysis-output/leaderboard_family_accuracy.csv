@@ -1,0 +1,8 @@
+column,family,mean_accuracy,std_proxy,min_accuracy,max_accuracy
+Recipe,recipe,47.7483,15.738,29.62,64.75
+Ingredient,ingredient,39.0283,9.9196,25.67,54.67
+Nutrition,nutrition,35.78,2.2407,32.67,38.67
+Action,fine_grained,38.4833,7.2818,27.24,48.3
+3D,3d_perception,33.6567,6.2823,25.74,42.59
+Motion,object_motion,25.1767,4.5127,18.93,30.17
+Gaze,gaze,27.9583,3.9795,21.2,32.95

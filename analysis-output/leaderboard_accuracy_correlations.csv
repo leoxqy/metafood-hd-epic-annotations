@@ -1,0 +1,9 @@
+feature,n_families,pearson_r,spearman_rho,mean_feature_value,families_used
+bbox_density,7,-0.605248,-0.668153,0.238095,recipe;ingredient;nutrition;fine_grained;3d_perception;object_motion;gaze
+spatial_density,7,-0.554777,-0.714286,0.441918,recipe;ingredient;nutrition;fine_grained;3d_perception;object_motion;gaze
+duration_mean_sec,4,0.533733,0.8,52.877623,ingredient;nutrition;fine_grained;gaze
+duration_median_sec,4,0.509765,0.8,12.359625,ingredient;nutrition;fine_grained;gaze
+numeric_density,7,-0.473849,-0.75724,0.997078,recipe;ingredient;nutrition;fine_grained;3d_perception;object_motion;gaze
+temporal_density,7,-0.380746,-0.57138,0.801104,recipe;ingredient;nutrition;fine_grained;3d_perception;object_motion;gaze
+duration_known_rate,7,-0.18417,-0.018712,0.339286,recipe;ingredient;nutrition;fine_grained;3d_perception;object_motion;gaze
+question_count,7,0.134833,-0.321429,3792.857143,recipe;ingredient;nutrition;fine_grained;3d_perception;object_motion;gaze

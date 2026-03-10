@@ -2,6 +2,47 @@
 
 This repository includes additional tooling and analysis outputs for practical HD-EPIC annotation usage and VQA benchmark diagnostics.
 
+### Official benchmark column mapping (VQA categories)
+
+The official HD-EPIC benchmark columns correspond to VQA JSON families by filename prefix:
+
+- `Recipe (%)` → `recipe_*.json`
+- `Ingredient (%)` → `ingredient_*.json`
+- `Nutrition (%)` → `nutrition_*.json`
+- `Action (%)` → `fine_grained_*.json`
+- `3D (%)` → `3d_perception_*.json`
+- `Motion (%)` → `object_motion_*.json`
+- `Gaze (%)` → `gaze_*.json`
+
+### Official benchmark snapshot (HD-EPIC)
+
+| # | Participant | Date | ID | Team Name | Overall (%) | Recipe (%) | Ingredient (%) | Nutrition (%) | Action (%) | 3D (%) | Motion (%) | Gaze (%) |
+|---|---|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1 | EPIC-KITCHENS | 2026-02-05 07:01 | 525125 | DeepFrames | 44.21 | 64.62 | 54.67 | 38.00 | 48.30 | 42.59 | 30.17 | 31.15 |
+| 2 | EPIC-KITCHENS | 2026-02-05 07:01 | 525126 | HelloWorld | 41.55 | 64.75 | 43.33 | 37.00 | 42.03 | 40.88 | 29.90 | 32.95 |
+| 3 | EPIC-KITCHENS | 2026-02-05 06:59 | 525118 | Gemini Pro [HD-EPIC Baseline] | 37.57 | 60.50 | 46.17 | 34.67 | 39.63 | 32.51 | 20.83 | 28.65 |
+| 4 | EPIC-KITCHENS | 2026-02-05 06:59 | 525119 | LLaVA-Video [HD-EPIC Baseline] | 32.43 | 36.25 | 33.50 | 38.67 | 43.02 | 27.31 | 18.93 | 29.30 |
+| 5 | EPIC-KITCHENS | 2026-02-05 07:00 | 525121 | LongVA [HD-EPIC Baseline] | 29.28 | 29.62 | 30.83 | 33.67 | 30.68 | 32.91 | 22.73 | 24.50 |
+| 6 | EPIC-KITCHENS | 2026-02-05 07:00 | 525124 | VideoLLaMA 2 [HD-EPIC Baseline] | 27.39 | 30.75 | 25.67 | 32.67 | 27.24 | 25.74 | 28.50 | 21.20 |
+
+### Difficulty diagnostics (leaderboard vs dataset factors)
+
+We added a focused analysis that compares official family-level leaderboard accuracy (6 participants) against family-level dataset diagnostics in `analysis-output/vqa_summary_by_family.csv`.
+
+- Radar chart (participants × VQA families):
+  - `analysis-output/figures/fig07_official_leaderboard_radar.png`
+  - `analysis-output/figures/fig07_official_leaderboard_radar.pdf`
+- Family mean accuracy table: `analysis-output/leaderboard_family_accuracy.csv`
+- Correlation table: `analysis-output/leaderboard_accuracy_correlations.csv`
+- Summary report: `analysis-output/leaderboard_difficulty_report.md`
+
+Current directional findings (small-sample, family-level):
+- Hardest families by mean accuracy: `object_motion` (25.18%), `gaze` (27.96%), `3d_perception` (33.66%).
+- Strongest negative correlations with accuracy:
+  - `bbox_density` (Pearson r = -0.605)
+  - `spatial_density` (Pearson r = -0.555)
+- Interpretation: families with denser spatial/BBOX grounding tend to be harder for current systems in this benchmark snapshot.
+
 ### What we added
 - One-click launchers for the annotation interface on both Windows and macOS.
 - VQA analysis scripts and generated summary outputs in `analysis-output/`.

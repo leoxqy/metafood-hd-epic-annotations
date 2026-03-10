@@ -18,6 +18,12 @@ From repository root:
 python scripts/analyze_vqa_benchmark.py
 ```
 
+For leaderboard-focused diagnostics (participant radar chart + family-level difficulty correlations):
+
+```powershell
+python scripts/analyze_leaderboard_vs_dataset.py
+```
+
 Optional arguments:
 
 ```powershell
