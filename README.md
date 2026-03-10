@@ -105,6 +105,7 @@ The figures in `analysis-output/figures/` are intended to make dataset structure
 For neutral publication-style panel-level explanations, see:
 - `analysis-output/figures/FIGURE_DESCRIPTIONS.md`
 - `analysis-output/figures/FIGURE_MANIFEST.md`
+- Embedded figure gallery (all figures): `analysis-output/figures/FIGURE_GALLERY.md`
 
 ## ![logo](logo-white.png) HD-EPIC: A Highly-Detailed Egocentric Video Dataset (CVPR 2025)
 
