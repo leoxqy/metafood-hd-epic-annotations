@@ -1,3 +1,63 @@
+## MetaFood Updates (March 2026)
+
+This repository includes additional tooling and analysis outputs for practical HD-EPIC annotation usage and VQA benchmark diagnostics.
+
+### What we added
+- One-click launchers for the annotation interface on both Windows and macOS.
+- VQA analysis scripts and generated summary outputs in `analysis-output/`.
+- Publication-style composite figures in `analysis-output/figures/` with supporting notes.
+
+### One-click annotation interface usage (Windows / macOS)
+The annotation UI is the HTML file `HD_EPIC_VQA_Interface.html`. We provide launcher scripts that open the page and start a local HTTP server on port 8000.
+
+#### Windows
+- Double-click `START_HD_EPIC_INTERFACE.bat`
+- Or run: `./START_HD_EPIC_INTERFACE.bat`
+
+#### macOS
+- Double-click `START_HD_EPIC_INTERFACE.command`
+- If macOS blocks execution on first run, open Terminal in this folder and run:
+  - `chmod +x START_HD_EPIC_INTERFACE.command`
+  - `./START_HD_EPIC_INTERFACE.command`
+
+Both launchers open:
+- `http://127.0.0.1:8000/HD_EPIC_VQA_Interface.html`
+
+### Figure motivation and descriptions
+The figures in `analysis-output/figures/` are intended to make dataset structure, annotation signal composition, and potential benchmark edge cases quickly auditable before model training/evaluation.
+
+- **Figure 1 (`fig01_global_overview`)**
+  - **Motivation:** establish a high-level dataset baseline and check class/signal balance.
+  - **What it shows:** profile mix, signal prevalence, duration availability, family volumes, family-level signal rates, and correct option index distribution.
+
+- **Figure 2 (`fig02_numeric_bbox_locality`)**
+  - **Motivation:** locate where numeric and BBOX cues appear, and detect leakage-like concentration patterns.
+  - **What it shows:** overall cue location (question/choices/metadata), family-level breakdowns, top BBOX-heavy files, and file-level numeric-in-question vs numeric-in-choices relationship.
+
+- **Figure 3 (`fig03_duration_analytics`)**
+  - **Motivation:** characterize temporal difficulty and duration metadata quality.
+  - **What it shows:** global log-scale duration distribution, family/profile duration spread, mean-vs-median file diagnostics, known-duration rates, and invalid time-range counts.
+
+- **Figure 4 (`fig04_input_answer_structure`)**
+  - **Motivation:** verify consistency of question schema and textual/option structure.
+  - **What it shows:** distributions of input/choice/clip-range counts, family-wise question length, question-length vs choice-count relation, and question-id index span by family.
+
+- **Figure 5 (`fig05_file_level_comparison`)**
+  - **Motivation:** compare JSON files as benchmark sources and identify skewed contributors.
+  - **What it shows:** per-file question volume, temporal-vs-spatial and numeric-vs-BBOX signal scatter, per-file duration coverage, language-only vs spatial comparisons, and profile-mixture complexity.
+
+- **Figure 6 (`fig06_cross_factor_matrix`)**
+  - **Motivation:** inspect cross-factor interactions and rare-case structures that may impact generalization.
+  - **What it shows:** profile×family count/rate matrices, time-token location rates, clip-duration availability by family, language-only rare cases, and feature correlation heatmap.
+
+- **Large-duration diagnostics (`big_duration_by_json_type`, `big_effective_duration_by_json_type`)**
+  - **Motivation:** provide a detailed per-JSON-type temporal reference beyond compact composites.
+  - **What they show:** per-type duration distributions/coverage and effective-viewing-duration composition across all VQA JSON types.
+
+For neutral publication-style panel-level explanations, see:
+- `analysis-output/figures/FIGURE_DESCRIPTIONS.md`
+- `analysis-output/figures/FIGURE_MANIFEST.md`
+
 ## ![logo](logo-white.png) HD-EPIC: A Highly-Detailed Egocentric Video Dataset (CVPR 2025)
 
 
