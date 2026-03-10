@@ -30,8 +30,13 @@ The official HD-EPIC benchmark columns correspond to VQA JSON families by filena
 We added a focused analysis that compares official family-level leaderboard accuracy (6 participants) against family-level dataset diagnostics in `analysis-output/vqa_summary_by_family.csv`.
 
 - Radar chart (participants × VQA families):
-  - `analysis-output/figures/fig07_official_leaderboard_radar.png`
-  - `analysis-output/figures/fig07_official_leaderboard_radar.pdf`
+  - `analysis-output/figures/fig07a_official_leaderboard_radar_top_group.png`
+  - `analysis-output/figures/fig07a_official_leaderboard_radar_top_group.pdf`
+  - `analysis-output/figures/fig07b_official_leaderboard_radar_baselines_only.png`
+  - `analysis-output/figures/fig07b_official_leaderboard_radar_baselines_only.pdf`
+- One-figure composite (CVPR/NeurIPS-style subplots for findings):
+  - `analysis-output/figures/fig08_leaderboard_difficulty_composite.png`
+  - `analysis-output/figures/fig08_leaderboard_difficulty_composite.pdf`
 - Family mean accuracy table: `analysis-output/leaderboard_family_accuracy.csv`
 - Correlation table: `analysis-output/leaderboard_accuracy_correlations.csv`
 - Summary report: `analysis-output/leaderboard_difficulty_report.md`
@@ -42,6 +47,8 @@ Current directional findings (small-sample, family-level):
   - `bbox_density` (Pearson r = -0.605)
   - `spatial_density` (Pearson r = -0.555)
 - Interpretation: families with denser spatial/BBOX grounding tend to be harder for current systems in this benchmark snapshot.
+
+![Figure 8 — Leaderboard-to-dataset difficulty diagnostics](analysis-output/figures/fig08_leaderboard_difficulty_composite.png)
 
 ### What we added
 - One-click launchers for the annotation interface on both Windows and macOS.

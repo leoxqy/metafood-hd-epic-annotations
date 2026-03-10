@@ -7,5 +7,8 @@ Generated figures:
 - fig04_input_answer_structure.(png/pdf)
 - fig05_file_level_comparison.(png/pdf)
 - fig06_cross_factor_matrix.(png/pdf)
+- fig07a_official_leaderboard_radar_top_group.(png/pdf)
+- fig07b_official_leaderboard_radar_baselines_only.(png/pdf)
+- fig08_leaderboard_difficulty_composite.(png/pdf)
 
 All figures are exported at high DPI with publication-oriented layout and typography.

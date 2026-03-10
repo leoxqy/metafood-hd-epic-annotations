@@ -212,6 +212,59 @@ File: `fig06_cross_factor_matrix.pdf`
 
 ---
 
+## Figure 8 — Leaderboard-to-dataset difficulty diagnostics (official snapshot)
+File: `fig08_leaderboard_difficulty_composite.pdf`
+
+**(a) Overall score by team**
+- Type: horizontal bar chart.
+- Encoding: y-axis lists teams; x-axis is official `Overall (%)` score.
+- Interpretation: bars rank systems by aggregate benchmark score.
+
+**(b) Mean accuracy by family**
+- Type: bar chart.
+- Encoding: x-axis is family; y-axis is mean accuracy over participants for that benchmark column/family.
+- Interpretation: compares family-level difficulty via observed average performance.
+
+**(c) Pearson correlation with accuracy**
+- Type: horizontal bar chart with signed values.
+- Encoding: y-axis lists top features; x-axis is Pearson correlation coefficient with family mean accuracy.
+- Interpretation: bars left of zero indicate negative association, bars right of zero indicate positive association, and magnitude 
+	`|r|` indicates strength.
+
+**(d) Accuracy vs 5 feature diagnostics**
+- Type: overlaid multi-series scatter plot.
+- Encoding: each color corresponds to one feature (`bbox_density`, `spatial_density`, `numeric_density`,
+	`temporal_density`, `duration_mean_sec`); x-axis is per-feature z-score, y-axis is family mean accuracy.
+- Interpretation: compares five diagnostics in one panel while preserving a common accuracy axis.
+
+**(e) Feature definitions**
+- Type: text reference panel.
+- Encoding: explicit formulas and field mappings from family summary.
+- Interpretation: clarifies that `bbox_density` means `bbox_signal_count / question_count`, and `spatial_density` means
+	`spatial_signal_count / question_count`.
+
+**(f) Interpreting Pearson r in (c)**
+- Type: text guidance panel.
+- Encoding: direction and magnitude rules.
+- Interpretation: left/right indicate negative/positive direction; `|r|<0.3` weak, `0.3–0.5` moderate, `>0.5` strong.
+
+**(g) Family radar (mean accuracy)**
+- Type: radar chart.
+- Encoding: angular axes correspond to the 7 official family columns; radial value is family mean accuracy.
+- Interpretation: compact summary of relative strengths/weaknesses by family.
+
+**(h) Radar: top group + strong baseline**
+- Type: radar chart.
+- Encoding: DeepFrames, HelloWorld, Gemini Pro baseline, and LLaVA-Video baseline.
+- Interpretation: highlights strongest systems plus the strongest baseline in one shape comparison.
+
+**(i) Radar: baselines only**
+- Type: radar chart.
+- Encoding: all baseline teams excluding DeepFrames and HelloWorld.
+- Interpretation: isolates baseline-vs-baseline family behavior without top-team dominance.
+
+---
+
 ## Suggested publication phrasing template
 Use this style in captions or main text:
 - "Panel (x) visualizes <metric> as a function of <grouping>, where <color/size/hue> encodes <variable>."

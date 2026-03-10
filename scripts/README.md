@@ -24,6 +24,14 @@ For leaderboard-focused diagnostics (participant radar chart + family-level diff
 python scripts/analyze_leaderboard_vs_dataset.py
 ```
 
+This command writes:
+- `analysis-output/figures/fig07a_official_leaderboard_radar_top_group.(png/pdf)`
+- `analysis-output/figures/fig07b_official_leaderboard_radar_baselines_only.(png/pdf)`
+- `analysis-output/figures/fig08_leaderboard_difficulty_composite.(png/pdf)`
+- `analysis-output/leaderboard_family_accuracy.csv`
+- `analysis-output/leaderboard_accuracy_correlations.csv`
+- `analysis-output/leaderboard_difficulty_report.md`
+
 Optional arguments:
 
 ```powershell
